@@ -1,0 +1,106 @@
+/* Vercel Serverless Function: /api/chat */
+
+import { createHmac } from 'crypto';
+
+const AUTH_COOKIE_NAME = 'bc_auth';
+const AUTH_COOKIE_SEED = 'biomed-chat';
+
+function computeAuthCookieValue(password) {
+  return createHmac('sha256', password).update(AUTH_COOKIE_SEED).digest('hex');
+}
+
+function parseCookies(req) {
+  const header = req.headers['cookie'] || '';
+  const pairs = header.split(';').map(s => s.trim()).filter(Boolean);
+  const out = {};
+  for (const p of pairs) {
+    const idx = p.indexOf('=');
+    if (idx > 0) out[p.slice(0, idx)] = decodeURIComponent(p.slice(idx + 1));
+  }
+  return out;
+}
+
+export default async function handler(req, res) {
+  if (req.method !== 'POST') {
+    res.statusCode = 405;
+    res.setHeader('Allow', 'POST');
+    return res.end('Method Not Allowed');
+  }
+
+  const SITE_PASSWORD = process.env.SITE_PASSWORD || process.env.BASIC_AUTH_PASS || '';
+  if (SITE_PASSWORD) {
+    const cookies = parseCookies(req);
+    const expected = computeAuthCookieValue(SITE_PASSWORD);
+    if (cookies[AUTH_COOKIE_NAME] !== expected) {
+      res.statusCode = 401;
+      return res.end('Unauthorized');
+    }
+  }
+
+  const XAI_API_KEY = process.env.XAI_API_KEY || '';
+  const XAI_MODEL = process.env.XAI_MODEL || 'grok-4';
+  if (!XAI_API_KEY) {
+    res.statusCode = 500;
+    return res.end('Server not configured');
+  }
+
+  let body = '';
+  for await (const chunk of req) body += chunk;
+  let messages;
+  try {
+    const parsed = JSON.parse(body || '{}');
+    messages = parsed.messages;
+    if (!Array.isArray(messages)) throw new Error('messages must be an array');
+  } catch (e) {
+    res.statusCode = 400;
+    return res.end('Bad Request');
+  }
+
+  const systemPrompt = `Role: Senior biomedical engineering copilot for practitioners.\n\nOperating principles:\n- Assume baseline practitioner knowledge: you can use standard terms (e.g., Poisson’s ratio, Nyquist sampling, impedance, HbA1c, ISO 13485) without lengthy definitions.\n- Be concise and clinically/technically actionable. Favor bullet points, numbered steps, and brief justifications.\n- Use equations and units when material, otherwise avoid math bloat.\n- Note safety, regulatory, and validation considerations succinctly (e.g., IEC 60601, FDA 21 CFR 820, ISO 14971) when relevant.\n- When uncertain, state assumptions and propose quick validation steps.\n- Prefer pragmatic designs, references, and checks over theory recaps.\n- If a result depends on parameters, provide defaults and ranges appropriate to typical biomedical contexts.\n\nResponse style:\n- Start with a one‑sentence answer, then compact details.\n- Use structured sections: Summary, Steps, Key Params, Risks/Checks, References (short).\n- Keep code and math minimal, but correct and runnable when requested.\n- Avoid overexplaining basics; this is for field practitioners.`;
+
+  const fullMessages = [{ role: 'system', content: systemPrompt }, ...messages];
+
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+
+  try {
+    const upstream = await fetch('https://api.x.ai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${XAI_API_KEY}`,
+      },
+      body: JSON.stringify({
+        model: XAI_MODEL,
+        messages: fullMessages,
+        stream: true,
+        temperature: 0.2,
+        max_tokens: 1200,
+      }),
+    });
+
+    if (!upstream.ok || !upstream.body) {
+      const text = await upstream.text().catch(() => 'Upstream error');
+      res.write(`event: error\n`);
+      res.write(`data: ${JSON.stringify({ error: text })}\n\n`);
+      return res.end();
+    }
+
+    const reader = upstream.body.getReader();
+    const decoder = new TextDecoder();
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      const chunk = decoder.decode(value);
+      res.write(chunk);
+    }
+
+    res.end();
+  } catch (err) {
+    res.write(`event: error\n`);
+    res.write(`data: ${JSON.stringify({ error: err?.message || 'Unknown error' })}\n\n`);
+    res.end();
+  }
+} 

@@ -137,6 +137,11 @@ async function sendMessage() {
       signal: controller.signal,
     });
 
+    if (resp.status === 401) {
+      window.location.href = '/login.html';
+      return;
+    }
+
     if (!resp.ok || !resp.body) {
       throw new Error(`HTTP ${resp.status}`);
     }
