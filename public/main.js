@@ -130,10 +130,11 @@ async function sendMessage() {
   sendBtn.classList.add('loading');
 
   try {
+    const apiKey = localStorage.getItem('xai_api_key') || '';
     const resp = await fetch('/api/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ messages: conversation }),
+      body: JSON.stringify({ messages: conversation, apiKey: apiKey || undefined }),
       signal: controller.signal,
     });
 

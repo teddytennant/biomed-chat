@@ -97,7 +97,20 @@
     a.minilink { color: var(--muted); text-decoration: none; border-bottom: 1px dotted var(--soft-border); }
     a.minilink:hover { color: #fff; border-bottom-color: #fff; }
 
-    @media (max-width: 720px) { .bubble { max-width: 100%; } .biomed-anim svg { width: 82%; } }
+    /* Settings modal */
+    .settings-btn { background: transparent; color: var(--muted); border: 1px solid var(--soft-border); border-radius: 8px; padding: 6px 10px; cursor: pointer; }
+    .settings-btn:hover { color: #fff; border-color: #fff; }
+    .modal { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; background: rgba(0,0,0,0.6); }
+    .modal.open { display: flex; }
+    .modal-card { background: #121826; border: 1px solid #222b45; padding: 20px; border-radius: 12px; width: 92%; max-width: 520px; }
+    .modal h2 { margin: 0 0 12px; font-size: 18px; }
+    .field { margin: 10px 0; }
+    .field label { display: block; font-size: 12px; color: #a0acc0; margin-bottom: 6px; }
+    .field input { width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid #2a3553; background: #0b1220; color: #e6eaf2; outline: none; }
+    .row-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 12px; }
+    .btn { background: #2f6feb; color: white; border: none; padding: 10px 12px; border-radius: 8px; cursor: pointer; }
+    .btn.secondary { background: #26324a; }
+    .note { color: #8b97ad; font-size: 12px; margin-top: 8px; }
   </style>
 </head>
 <body>
@@ -112,6 +125,7 @@
       </div>
       <div style="display:flex; gap:10px; align-items:center;">
         <a class="minilink" href="/health" target="_blank">server health</a>
+        <button id="open-settings" class="settings-btn">Settings</button>
       </div>
     </header>
 
@@ -148,6 +162,66 @@
       <div class="hint">Concise. Assumes practitioner baseline. No fluff. Always verify content AI produces as it can be error prone. Made by Teddy Tennant and Roshan Sathish Sandhya.</div>
     </div>
   </div>
+  <div id="settings-modal" class="modal" aria-hidden="true">
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="settings-title">
+      <h2 id="settings-title">Settings</h2>
+      <div class="field">
+        <label for="xai-api-key">xAI API Key</label>
+        <input id="xai-api-key" type="password" placeholder="sk-..." />
+        <div class="note">Stored locally in your browser. If set, it overrides the server key.</div>
+      </div>
+      <div class="row-actions">
+        <button id="save-settings" class="btn">Save</button>
+        <button id="clear-settings" class="btn secondary">Clear</button>
+        <button id="close-settings" class="btn secondary">Close</button>
+      </div>
+    </div>
+  </div>
   <script type="module" src="/main.js"></script>
+  <script>
+    const modal = document.getElementById('settings-modal');
+    const openBtn = document.getElementById('open-settings');
+    const closeBtn = document.getElementById('close-settings');
+    const saveBtn = document.getElementById('save-settings');
+    const clearBtn = document.getElementById('clear-settings');
+    const keyInput = document.getElementById('xai-api-key');
+
+    function openModal() {
+      const stored = localStorage.getItem('xai_api_key') || '';
+      keyInput.value = stored ? '••••••••••••' : '';
+      modal.classList.add('open');
+      modal.setAttribute('aria-hidden', 'false');
+    }
+    function closeModal() {
+      modal.classList.remove('open');
+      modal.setAttribute('aria-hidden', 'true');
+    }
+    openBtn.addEventListener('click', openModal);
+    closeBtn.addEventListener('click', closeModal);
+
+    keyInput.addEventListener('focus', () => {
+      if (keyInput.value.startsWith('•')) keyInput.value = '';
+    });
+
+    saveBtn.addEventListener('click', () => {
+      const v = keyInput.value.trim();
+      if (v && !v.startsWith('•')) {
+        localStorage.setItem('xai_api_key', v);
+      }
+      closeModal();
+    });
+    clearBtn.addEventListener('click', () => {
+      localStorage.removeItem('xai_api_key');
+      keyInput.value = '';
+    });
+
+    // Close modal on ESC or overlay click
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) closeModal();
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closeModal();
+    });
+  </script>
 </body>
 </html> 
