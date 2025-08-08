@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Biomed Chat</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0b0b0b;
+      --panel: #121212;
+      --text: #f5f5f5;
+      --muted: #9a9a9a;
+      --border: #232323;
+      --soft-border: #2a2a2a;
+      --btn-bg: #ffffff;
+      --btn-text: #0b0b0b;
+      --code-bg: #0a0a0a;
+      --code-border: #1d1d1d;
+      --code-text: #f0f0f0;
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body { margin: 0; font-family: 'Space Grotesk', ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; background: var(--bg); color: var(--text); display: block; }
+    .container { width: 100vw; max-width: none; min-height: 100vh; display: grid; grid-template-rows: auto 1fr auto; padding: 0; gap: 0; }
+    header { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid var(--border); background: var(--panel); border-radius: 0; }
+    .title { display: flex; align-items: center; gap: 10px; font-weight: 700; letter-spacing: 0.2px; }
+    .dot { width: 10px; height: 10px; border-radius: 50%; background: #fff; }
+    .subtitle { color: var(--muted); font-weight: 500; font-size: 13px; }
+
+    .chat { display: grid; grid-template-rows: 1fr auto; overflow: hidden; min-height: 0; background: var(--panel); }
+
+    .messages { position: relative; padding: 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; scroll-behavior: smooth; }
+
+    /* Centered ECG animation (visible when no messages) */
+    .biomed-anim { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; pointer-events: none; opacity: 0.12; }
+    .biomed-anim svg { width: 60%; max-width: 900px; min-width: 280px; }
+    .ecg-path { stroke: #ffffff; stroke-width: 2; fill: none; stroke-linejoin: round; stroke-linecap: round; opacity: 0.9; filter: drop-shadow(0 0 6px rgba(255,255,255,0.12)); }
+    .pulse-dot { fill: #ffffff; filter: drop-shadow(0 0 6px rgba(255,255,255,0.5)); }
+    .messages.has-content .biomed-anim { display: none; }
+
+    .bubble { max-width: 82%; padding: 10px 12px; border-radius: 10px; line-height: 1.55; border: 1px solid var(--soft-border); background: #0f0f0f; color: var(--text); }
+    .bubble.user { white-space: pre-wrap; }
+    .assistant { align-self: flex-start; background: #0f0f0f; }
+    .user { align-self: flex-end; background: #131313; }
+
+    /* Markdown inside assistant bubbles */
+    .bubble .md { font-size: 15px; }
+    .bubble .md h1, .bubble .md h2, .bubble .md h3 { margin: 0 0 8px; font-weight: 700; }
+    .bubble .md h1 { font-size: 18px; }
+    .bubble .md h2 { font-size: 17px; }
+    .bubble .md h3 { font-size: 16px; }
+    .bubble .md p { margin: 0 0 8px; }
+    .bubble .md ul, .bubble .md ol { margin: 0 0 8px 18px; padding: 0; }
+    .bubble .md code { background: var(--code-bg); border: 1px solid var(--code-border); color: var(--code-text); padding: 1px 4px; border-radius: 6px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; font-size: 0.95em; }
+    .bubble .md pre { background: var(--code-bg); border: 1px solid var(--code-border); color: var(--code-text); padding: 10px; border-radius: 8px; overflow: auto; }
+    .bubble .md pre code { border: 0; padding: 0; background: transparent; }
+    .bubble .md hr { border: 0; border-top: 1px solid var(--soft-border); margin: 10px 0; }
+    .bubble .md table { width: 100%; border-collapse: collapse; margin: 6px 0; }
+    .bubble .md th, .bubble .md td { border: 1px solid var(--soft-border); padding: 6px; text-align: left; }
+
+    /* Thinking indicator */
+    .thinking { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); }
+    .thinking .dots { display: inline-flex; gap: 2px; }
+    .thinking .dot { width: 4px; height: 4px; border-radius: 50%; background: var(--muted); opacity: 0.3; animation: blink 1.2s infinite; }
+    .thinking .dot:nth-child(2) { animation-delay: 0.2s; }
+    .thinking .dot:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes blink { 0%, 80%, 100% { opacity: 0.2 } 40% { opacity: 1 } }
+
+    /* Textarea resizer handle (inside composer, above the textarea) */
+    .ta-resizer { height: 10px; cursor: ns-resize; display: flex; align-items: center; justify-content: center; background: var(--panel); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); margin: 0 16px; }
+    .ta-resizer .line { width: 60px; height: 2px; background: #2f2f2f; border-radius: 2px; }
+
+    .composer { display: grid; grid-template-columns: 1fr auto; gap: 8px; padding: 10px 16px 12px; border-top: 1px solid var(--border); background: var(--panel); }
+    textarea { width: 100%; resize: none; min-height: 100px; max-height: 60vh; border-radius: 10px; border: 1px solid var(--soft-border); padding: 12px 12px; background: #0e0e0e; color: var(--text); outline: none; line-height: 1.4; }
+
+    /* Send button styling */
+    button.send { background: var(--btn-bg); color: var(--btn-text); border: 1px solid #e9e9e9; border-radius: 999px; height: 44px; padding: 0 18px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 10px; transition: transform 0.12s ease, box-shadow 0.2s ease, background 0.15s ease, border-color 0.15s ease; box-shadow: 0 2px 10px rgba(0,0,0,0.25); }
+    button.send .icon { width: 18px; height: 18px; transition: transform 0.12s ease; }
+    button.send:hover { transform: translateY(-1px); box-shadow: 0 8px 22px rgba(0,0,0,0.35); }
+    button.send:hover .icon { transform: translateX(2px); }
+    button.send:active { transform: translateY(0); box-shadow: 0 3px 12px rgba(0,0,0,0.3); }
+    button.send:disabled { opacity: 0.7; cursor: not-allowed; }
+
+    /* Loading state */
+    button.send .spinner { width: 16px; height: 16px; border: 2px solid var(--btn-text); border-right-color: transparent; border-radius: 50%; display: none; animation: spin 0.8s linear infinite; }
+    button.send.loading .label { display: none; }
+    button.send.loading .icon { display: none; }
+    button.send.loading .spinner { display: inline-block; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .hint { color: var(--muted); font-size: 12.5px; padding: 8px 16px; border-top: 1px solid var(--border); background: var(--panel); }
+    .row { display: flex; gap: 8px; align-items: center; justify-content: space-between; }
+
+    a.minilink { color: var(--muted); text-decoration: none; border-bottom: 1px dotted var(--soft-border); }
+    a.minilink:hover { color: #fff; border-bottom-color: #fff; }
+
+    @media (max-width: 720px) { .bubble { max-width: 100%; } .biomed-anim svg { width: 82%; } }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="title">
+        <div class="dot"></div>
+        <div>
+          <div>Biomed Chat</div>
+          <div class="subtitle">Your personal copilot for Biomedical Engineering</div>
+        </div>
+      </div>
+      <div style="display:flex; gap:10px; align-items:center;">
+        <a class="minilink" href="/health" target="_blank">server health</a>
+      </div>
+    </header>
+
+    <div class="chat" id="chat">
+      <div id="messages" class="messages">
+        <div class="biomed-anim" aria-hidden="true">
+          <svg viewBox="0 0 1000 200" preserveAspectRatio="xMidYMid meet">
+            <defs>
+              <path id="ecgPath" d="M0 100 L120 100 140 96 160 104 180 100 210 100 230 88 240 100 255 100 275 58 285 140 295 68 305 100 325 100 345 94 355 100 375 100 395 100 415 100 435 100 455 96 475 104 495 100 520 100 540 90 550 100 565 100 585 56 595 142 605 64 615 100 635 100 650 98 665 100 685 100 705 100 725 100 745 100 765 96 785 104 805 100 825 100 845 90 855 100 875 100 895 58 905 140 915 68 925 100 940 100 960 100 980 100 1000 100" />
+            </defs>
+            <use href="#ecgPath" class="ecg-path" />
+            <circle class="pulse-dot" r="3">
+              <animateMotion dur="4s" repeatCount="indefinite" rotate="auto">
+                <mpath href="#ecgPath" />
+              </animateMotion>
+            </circle>
+          </svg>
+        </div>
+      </div>
+      <div class="ta-resizer" id="ta-resizer" role="separator" aria-orientation="horizontal" title="Drag to resize textbox">
+        <div class="line"></div>
+      </div>
+      <div class="composer">
+        <textarea id="input" placeholder="Type your prompt…"></textarea>
+        <button id="send" class="send" aria-label="Send">
+          <span class="label">Send</span>
+          <svg class="icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M4 12h14" stroke="#0b0b0b" stroke-width="2" stroke-linecap="round"/><path d="M14 6l6 6-6 6" stroke="#0b0b0b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span class="spinner" aria-hidden="true"></span>
+        </button>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="hint">Concise. Assumes practitioner baseline. No fluff. Always verify content AI produces as it can be error prone. Made by Teddy Tennant and Roshan Sathish Sandhya.</div>
+    </div>
+  </div>
+  <script type="module" src="/main.js"></script>
+</body>
+</html> 
