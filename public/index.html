@@ -30,9 +30,9 @@
     .dot { width: 10px; height: 10px; border-radius: 50%; background: #fff; }
     .subtitle { color: var(--muted); font-weight: 500; font-size: 13px; }
 
-    .chat { display: grid; grid-template-rows: 1fr auto; overflow: hidden; min-height: 0; background: var(--panel); }
+    .chat { display: flex; flex-direction: column; overflow: hidden; min-height: 0; background: var(--panel); }
 
-    .messages { position: relative; padding: 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; scroll-behavior: smooth; }
+    .messages { flex: 1; position: relative; padding: 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; scroll-behavior: smooth; }
 
     /* Centered ECG animation (visible when no messages) */
     .biomed-anim { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; pointer-events: none; opacity: 0.12; }
@@ -55,7 +55,9 @@
     .bubble .md p { margin: 0 0 8px; }
     .bubble .md ul, .bubble .md ol { margin: 0 0 8px 18px; padding: 0; }
     .bubble .md code { background: var(--code-bg); border: 1px solid var(--code-border); color: var(--code-text); padding: 1px 4px; border-radius: 6px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; font-size: 0.95em; }
-    .bubble .md pre { background: var(--code-bg); border: 1px solid var(--code-border); color: var(--code-text); padding: 10px; border-radius: 8px; overflow: auto; }
+    .bubble .md pre { position: relative; background: var(--code-bg); border: 1px solid var(--code-border); color: var(--code-text); padding: 10px; border-radius: 8px; overflow: auto; }
+    .bubble .md pre .copy-btn { position: absolute; top: 8px; right: 8px; background: #2a2a2a; border: 1px solid #3a3a3a; color: #f0f0f0; padding: 4px 8px; border-radius: 6px; cursor: pointer; font-size: 12px; }
+    .bubble .md pre .copy-btn:hover { background: #3a3a3a; }
     .bubble .md pre code { border: 0; padding: 0; background: transparent; }
     .bubble .md hr { border: 0; border-top: 1px solid var(--soft-border); margin: 10px 0; }
     .bubble .md table { width: 100%; border-collapse: collapse; margin: 6px 0; }
@@ -166,13 +168,14 @@
     <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="settings-title">
       <h2 id="settings-title">Settings</h2>
       <div class="field">
-        <label for="xai-api-key">xAI API Key</label>
-        <input id="xai-api-key" type="password" placeholder="sk-..." />
-        <div class="note">Stored locally in your browser. If set, it overrides the server key.</div>
+        <label for="model-select">Model</label>
+        <select id="model-select" class="settings-btn" style="width: 100%; padding-right: 28px; -webkit-appearance: none; -moz-appearance: none; appearance: none; background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="%239a9a9a'><path stroke-linecap='round' stroke-linejoin='round' d='m19.5 8.25-7.5 7.5-7.5-7.5' /></svg>'); background-position: right 8px center; background-repeat: no-repeat;">
+          <option value="grok-4">Advanced</option>
+          <option value="grok-3">Mid</option>
+          <option value="grok-3-mini">Small</option>
+        </select>
       </div>
       <div class="row-actions">
-        <button id="save-settings" class="btn">Save</button>
-        <button id="clear-settings" class="btn secondary">Clear</button>
         <button id="close-settings" class="btn secondary">Close</button>
       </div>
     </div>
@@ -182,13 +185,8 @@
     const modal = document.getElementById('settings-modal');
     const openBtn = document.getElementById('open-settings');
     const closeBtn = document.getElementById('close-settings');
-    const saveBtn = document.getElementById('save-settings');
-    const clearBtn = document.getElementById('clear-settings');
-    const keyInput = document.getElementById('xai-api-key');
 
     function openModal() {
-      const stored = localStorage.getItem('xai_api_key') || '';
-      keyInput.value = stored ? '••••••••••••' : '';
       modal.classList.add('open');
       modal.setAttribute('aria-hidden', 'false');
     }
@@ -198,22 +196,6 @@
     }
     openBtn.addEventListener('click', openModal);
     closeBtn.addEventListener('click', closeModal);
-
-    keyInput.addEventListener('focus', () => {
-      if (keyInput.value.startsWith('•')) keyInput.value = '';
-    });
-
-    saveBtn.addEventListener('click', () => {
-      const v = keyInput.value.trim();
-      if (v && !v.startsWith('•')) {
-        localStorage.setItem('xai_api_key', v);
-      }
-      closeModal();
-    });
-    clearBtn.addEventListener('click', () => {
-      localStorage.removeItem('xai_api_key');
-      keyInput.value = '';
-    });
 
     // Close modal on ESC or overlay click
     modal.addEventListener('click', (e) => {

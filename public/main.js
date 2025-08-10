@@ -1,6 +1,7 @@
 const messagesEl = document.getElementById('messages');
 const inputEl = document.getElementById('input');
 const sendBtn = document.getElementById('send');
+const modelSelectEl = document.getElementById('model-select');
 const taResizerEl = document.getElementById('ta-resizer');
 
 /** @type {{ role: 'user'|'assistant'|'system', content: string }[]} */
@@ -41,7 +42,8 @@ function renderMarkdown(md) {
 
   // Code fences ```
   html = html.replace(/```([\s\S]*?)```/g, (m, p1) => {
-    return `<pre><code>${p1.replace(/\n$/, '')}</code></pre>`;
+    const code = p1.replace(/\n$/, '');
+    return `<pre><button class="copy-btn">Copy</button><code>${code}</code></pre>`;
   });
   // Headings ###, ##, #
   html = html
@@ -55,12 +57,7 @@ function renderMarkdown(md) {
   html = html.replace(/^\d+\.\s+(.*)$/gm, '<li>$1</li>');
   html = html.replace(/(<li>.*<\/li>\n?)+/g, (m) => `<ol>${m.replace(/\n/g, '')}</ol>`);
   // Inline code `code`
-  html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
-  // Paragraphs
-  html = html
-    .split(/\n\n+/)
-    .map(block => /<(h\d|ul|ol|pre)/.test(block) ? block : `<p>${block}</p>`)
-    .join('');
+  html = html.replace(/`([^`]+)`/g, '<code>$1</code>');  // Bold  html = html.replace(/\*\*([\s\S]+?)\*\*/g, '<strong>$1</strong>');  // Paragraphs  html = html    .split(/\n\n+/)    .map(block => /<(h\d|ul|ol|pre)/.test(block) ? block : `<p>${block}</p>`)    .join('');
 
   return `<div class="md">${html}</div>`;
 }
@@ -130,11 +127,11 @@ async function sendMessage() {
   sendBtn.classList.add('loading');
 
   try {
-    const apiKey = localStorage.getItem('xai_api_key') || '';
+    const selectedModel = modelSelectEl.value;
     const resp = await fetch('/api/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ messages: conversation, apiKey: apiKey || undefined }),
+      body: JSON.stringify({ messages: conversation, model: selectedModel }),
       signal: controller.signal,
     });
 
@@ -207,5 +204,27 @@ if (!localStorage.getItem('biomed_welcome_shown')) {
   inputEl.value = demo;
   localStorage.setItem('biomed_welcome_shown', '1');
 }
+
+// Restore model selection
+const savedModel = localStorage.getItem('selected_model');
+if (savedModel) {
+  modelSelectEl.value = savedModel;
+}
+
+modelSelectEl.addEventListener('change', () => {
+  localStorage.setItem('selected_model', modelSelectEl.value);
+});
+
+messagesEl.addEventListener('click', (e) => {
+  if (e.target.classList.contains('copy-btn')) {
+    const pre = e.target.closest('pre');
+    const code = pre.querySelector('code');
+    navigator.clipboard.writeText(code.innerText);
+    e.target.innerText = 'Copied!';
+    setTimeout(() => {
+      e.target.innerText = 'Copy';
+    }, 2000);
+  }
+});
 
  

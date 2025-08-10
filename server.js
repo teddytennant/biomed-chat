@@ -155,12 +155,14 @@ Operating principles:
 - When uncertain, state assumptions and propose quick validation steps.
 - Prefer pragmatic designs, references, and checks over theory recaps.
 - If a result depends on parameters, provide defaults and ranges appropriate to typical biomedical contexts.
+- Provide past examples of how something went if there are any.
 
 Response style:
 - Start with a one‑sentence answer, then compact details.
 - Use structured sections: Summary, Steps, Key Params, Risks/Checks, References (short).
 - Keep code and math minimal, but correct and runnable when requested.
 - Avoid overexplaining basics; this is for field practitioners.
+- If the user asks for a different response style, provide it.
 `;
 
 app.post('/api/chat', async (req, res) => {

@@ -40,11 +40,11 @@ export default async function handler(req, res) {
   let body = '';
   for await (const chunk of req) body += chunk;
   let messages;
-  let clientApiKey = '';
+  let model = '';
   try {
     const parsed = JSON.parse(body || '{}');
     messages = parsed.messages;
-    clientApiKey = (parsed.apiKey || '').toString().trim();
+    model = (parsed.model || '').toString().trim();
     if (!Array.isArray(messages)) throw new Error('messages must be an array');
   } catch (e) {
     res.statusCode = 400;
@@ -52,13 +52,28 @@ export default async function handler(req, res) {
   }
 
   const XAI_API_KEY = clientApiKey || process.env.XAI_API_KEY || '';
-  const XAI_MODEL = process.env.XAI_MODEL || 'grok-4';
   if (!XAI_API_KEY) {
     res.statusCode = 500;
     return res.end('Server not configured');
   }
 
-  const systemPrompt = `Role: Senior biomedical engineering copilot for practitioners.\n\nOperating principles:\n- Assume baseline practitioner knowledge: you can use standard terms (e.g., Poisson’s ratio, Nyquist sampling, impedance, HbA1c, ISO 13485) without lengthy definitions.\n- Be concise and clinically/technically actionable. Favor bullet points, numbered steps, and brief justifications.\n- Use equations and units when material, otherwise avoid math bloat.\n- Note safety, regulatory, and validation considerations succinctly (e.g., IEC 60601, FDA 21 CFR 820, ISO 14971) when relevant.\n- When uncertain, state assumptions and propose quick validation steps.\n- Prefer pragmatic designs, references, and checks over theory recaps.\n- If a result depends on parameters, provide defaults and ranges appropriate to typical biomedical contexts.\n\nResponse style:\n- Start with a one‑sentence answer, then compact details.\n- Use structured sections: Summary, Steps, Key Params, Risks/Checks, References (short).\n- Keep code and math minimal, but correct and runnable when requested.\n- Avoid overexplaining basics; this is for field practitioners.`;
+  const systemPrompt = `Role: Senior biomedical engineering copilot for practitioners.
+
+Operating principles:
+- Assume baseline practitioner knowledge: you can use standard terms (e.g., Poisson’s ratio, Nyquist sampling, impedance, HbA1c, ISO 13485) without lengthy definitions.
+- Be concise and clinically/technically actionable. Favor bullet points, numbered steps, and brief justifications.
+- Use equations and units when material, otherwise avoid math bloat.
+- Note safety, regulatory, and validation considerations succinctly (e.g., IEC 60601, FDA 21 CFR 820, ISO 14971) when relevant.
+- When uncertain, state assumptions and propose quick validation steps.
+- Prefer pragmatic designs, references, and checks over theory recaps.
+- If a result depends on parameters, provide defaults and ranges appropriate to typical biomedical contexts.
+- Find and reference the work of industry experts and their papers to support your answers.
+
+Response style:
+- Start with a one‑sentence answer, then compact details.
+- Use structured sections: Summary, Steps, Key Params, Risks/Checks, References (short, and include links).
+- Keep code and math minimal, but correct and runnable when requested.
+- Avoid overexplaining basics; this is for field practitioners.`
 
   const fullMessages = [{ role: 'system', content: systemPrompt }, ...messages];
 
@@ -74,7 +89,7 @@ export default async function handler(req, res) {
         'Authorization': `Bearer ${XAI_API_KEY}`,
       },
       body: JSON.stringify({
-        model: XAI_MODEL,
+        model: model || 'grok-4',
         messages: fullMessages,
         stream: true,
         temperature: 0.2,
