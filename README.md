@@ -69,3 +69,7 @@ Mock responses include realistic biomedical engineering content with proper form
 - Streaming responses for low-latency UI.
 - Shift+Enter inserts newline. 
 - Mock responses maintain the same format and quality as AI responses.
+
+## Coming soon:
+- Fine tuned model for verifying outputs from Grok 4
+- RAG from verified resources
