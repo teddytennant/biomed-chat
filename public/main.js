@@ -1,6 +1,7 @@
 const messagesEl = document.getElementById('messages');
 const inputEl = document.getElementById('input');
 const sendBtn = document.getElementById('send');
+const stopBtn = document.getElementById('stop');
 const modelSelectEl = document.getElementById('model-select');
 const taResizerEl = document.getElementById('ta-resizer');
 
@@ -122,9 +123,15 @@ async function sendMessage() {
   let assistantAccum = '';
 
   const controller = new AbortController();
+  const signal = controller.signal;
+
+  const stop = () => controller.abort();
+  stopBtn.addEventListener('click', stop);
+
   isSending = true;
-  sendBtn.disabled = true;
-  sendBtn.classList.add('loading');
+  sendBtn.classList.add('hidden');
+  stopBtn.classList.remove('hidden');
+  inputEl.disabled = true;
 
   try {
     const selectedModel = modelSelectEl.value;
@@ -132,7 +139,7 @@ async function sendMessage() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ messages: conversation, model: selectedModel }),
-      signal: controller.signal,
+      signal,
     });
 
     if (resp.status === 401) {
@@ -181,11 +188,18 @@ async function sendMessage() {
       conversation.push({ role: 'assistant', content: assistantAccum });
     }
   } catch (err) {
-    assistantBubble.innerHTML = `<div class="md"><p>Error: ${err.message}</p></div>`;
+    if (err.name !== 'AbortError') {
+      assistantBubble.innerHTML = `<div class="md"><p>Error: ${err.message}</p></div>`;
+    } else {
+      assistantBubble.innerHTML = renderMarkdown(assistantAccum + '...');
+    }
   } finally {
     isSending = false;
-    sendBtn.disabled = false;
-    sendBtn.classList.remove('loading');
+    sendBtn.classList.remove('hidden');
+    stopBtn.classList.add('hidden');
+    inputEl.disabled = false;
+    stopBtn.removeEventListener('click', stop);
+    inputEl.focus();
   }
 }
 

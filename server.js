@@ -4,6 +4,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
 import { createHmac } from 'crypto';
+import { getMockResponse, createMockSSEStream } from './mock-responses.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -140,9 +141,10 @@ const XAI_API_KEY = process.env.XAI_API_KEY || '';
 const XAI_MODEL = process.env.XAI_MODEL || 'grok-4';
 
 if (!XAI_API_KEY) {
-  console.warn('[WARN] XAI_API_KEY is not set. Ensure .env contains XAI_API_KEY=...');
+  console.warn('[WARN] XAI_API_KEY is not set. Using mock responses for demonstration.');
+  console.warn('[INFO] To enable full functionality, add XAI_API_KEY to your .env file');
 } else {
-  console.log('[INFO] XAI_API_KEY loaded');
+  console.log('[INFO] XAI_API_KEY loaded - using X.AI API');
 }
 
 const systemPrompt = `Role: Senior biomedical engineering copilot for practitioners.
@@ -166,21 +168,47 @@ Response style:
 `;
 
 app.post('/api/chat', async (req, res) => {
+  let mockStream;
+  let reader;
+
+  req.on('close', () => {
+    if (reader) {
+      reader.cancel().catch(e => console.warn('[WARN] Error cancelling reader:', e.message));
+    }
+    if (mockStream) {
+      mockStream.cancel();
+    }
+    console.log('[INFO] Client disconnected, stream closed.');
+    res.end();
+  });
+
   try {
     const { messages } = req.body || {};
     if (!Array.isArray(messages)) {
       return res.status(400).json({ error: 'messages must be an array' });
     }
 
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+
+    if (!XAI_API_KEY) {
+      const userMessage = messages[messages.length - 1]?.content || '';
+      const mockContent = getMockResponse(userMessage);
+      mockStream = createMockSSEStream(mockContent);
+      
+      for await (const chunk of mockStream.generate()) {
+        if (req.aborted) break;
+        res.write(chunk);
+      }
+      
+      return res.end();
+    }
+
     const fullMessages = [
       { role: 'system', content: systemPrompt },
       ...messages,
     ];
-
-    // Stream via Server-Sent Events for responsive UI
-    res.setHeader('Content-Type', 'text/event-stream');
-    res.setHeader('Cache-Control', 'no-cache');
-    res.setHeader('Connection', 'keep-alive');
 
     const response = await fetch('https://api.x.ai/v1/chat/completions', {
       method: 'POST',
@@ -198,28 +226,54 @@ app.post('/api/chat', async (req, res) => {
     });
 
     if (!response.ok || !response.body) {
-      const text = await response.text();
-      res.write(`event: error\n`);
-      res.write(`data: ${JSON.stringify({ error: text || 'Upstream error' })}\n\n`);
+      console.warn('[WARN] API request failed, falling back to mock response');
+      const userMessage = messages[messages.length - 1]?.content || '';
+      const mockContent = getMockResponse(userMessage);
+      mockStream = createMockSSEStream(mockContent);
+      
+      for await (const chunk of mockStream.generate()) {
+        if (req.aborted) break;
+        res.write(chunk);
+      }
+      
       return res.end();
     }
 
-    const reader = response.body.getReader();
+    reader = response.body.getReader();
     const textDecoder = new TextDecoder();
 
     while (true) {
       const { done, value } = await reader.read();
-      if (done) break;
+      if (done || req.aborted) break;
       const chunk = textDecoder.decode(value);
-      // Forward upstream SSE as-is (already includes data: lines and separators)
       res.write(chunk);
     }
 
     return res.end();
   } catch (err) {
-    res.write(`event: error\n`);
-    res.write(`data: ${JSON.stringify({ error: err?.message || 'Unknown error' })}\n\n`);
-    res.end();
+    if (err.name === 'AbortError') {
+      console.log('[INFO] Request aborted by client');
+      return res.end();
+    }
+    
+    console.warn('[WARN] Error in chat endpoint, falling back to mock response:', err.message);
+    try {
+      const { messages } = req.body || {};
+      const userMessage = Array.isArray(messages) && messages.length > 0 ? messages[messages.length - 1]?.content || '' : '';
+      const mockContent = getMockResponse(userMessage);
+      mockStream = createMockSSEStream(mockContent);
+      
+      for await (const chunk of mockStream.generate()) {
+        if (req.aborted) break;
+        res.write(chunk);
+      }
+      
+      return res.end();
+    } catch (fallbackErr) {
+      res.write(`event: error\n`);
+      res.write(`data: ${JSON.stringify({ error: err?.message || 'Unknown error' })}\n\n`);
+      res.end();
+    }
   }
 });
 

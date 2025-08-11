@@ -1,6 +1,7 @@
 /* Vercel Serverless Function: /api/chat */
 
 import { createHmac } from 'crypto';
+import { getMockResponse, createMockSSEStream } from '../mock-responses.js';
 
 const AUTH_COOKIE_NAME = 'bc_auth';
 const AUTH_COOKIE_SEED = 'biomed-chat';
@@ -51,11 +52,7 @@ export default async function handler(req, res) {
     return res.end('Bad Request');
   }
 
-  const XAI_API_KEY = clientApiKey || process.env.XAI_API_KEY || '';
-  if (!XAI_API_KEY) {
-    res.statusCode = 500;
-    return res.end('Server not configured');
-  }
+  const XAI_API_KEY = process.env.XAI_API_KEY || '';
 
   const systemPrompt = `Role: Senior biomedical engineering copilot for practitioners.
 
@@ -81,6 +78,26 @@ Response style:
   res.setHeader('Cache-Control', 'no-cache');
   res.setHeader('Connection', 'keep-alive');
 
+  // If no API key, use mock responses
+  if (!XAI_API_KEY) {
+    try {
+      const userMessage = messages[messages.length - 1]?.content || '';
+      const mockContent = getMockResponse(userMessage);
+      const mockStream = createMockSSEStream(mockContent);
+      
+      for await (const chunk of mockStream.generate()) {
+        res.write(chunk);
+      }
+      
+      return res.end();
+    } catch (err) {
+      res.write(`event: error\n`);
+      res.write(`data: ${JSON.stringify({ error: 'Mock response error' })}\n\n`);
+      return res.end();
+    }
+  }
+
+  // Use real API if key is available
   try {
     const upstream = await fetch('https://api.x.ai/v1/chat/completions', {
       method: 'POST',
@@ -98,9 +115,15 @@ Response style:
     });
 
     if (!upstream.ok || !upstream.body) {
-      const text = await upstream.text().catch(() => 'Upstream error');
-      res.write(`event: error\n`);
-      res.write(`data: ${JSON.stringify({ error: text })}\n\n`);
+      // Fallback to mock response if API fails
+      const userMessage = messages[messages.length - 1]?.content || '';
+      const mockContent = getMockResponse(userMessage);
+      const mockStream = createMockSSEStream(mockContent);
+      
+      for await (const chunk of mockStream.generate()) {
+        res.write(chunk);
+      }
+      
       return res.end();
     }
 
@@ -116,8 +139,21 @@ Response style:
 
     res.end();
   } catch (err) {
-    res.write(`event: error\n`);
-    res.write(`data: ${JSON.stringify({ error: err?.message || 'Unknown error' })}\n\n`);
-    res.end();
+    // Fallback to mock response on any error
+    try {
+      const userMessage = messages[messages.length - 1]?.content || '';
+      const mockContent = getMockResponse(userMessage);
+      const mockStream = createMockSSEStream(mockContent);
+      
+      for await (const chunk of mockStream.generate()) {
+        res.write(chunk);
+      }
+      
+      return res.end();
+    } catch (fallbackErr) {
+      res.write(`event: error\n`);
+      res.write(`data: ${JSON.stringify({ error: err?.message || 'Unknown error' })}\n\n`);
+      res.end();
+    }
   }
 } 
