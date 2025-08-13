@@ -1,6 +1,6 @@
 # Biomed Chat
 
-Practitioner-focused chatbot UI for biomedical engineers. Proxies to Grok‑4 via xAI API with a tailored system prompt that assumes baseline field expertise.
+Practitioner-focused chatbot UI for biomedical engineers. Proxies to Grok‑4 via xAI API with RAG and a tailored system prompt that assumes baseline field expertise.
 
 ## Features
 
@@ -72,4 +72,3 @@ Mock responses include realistic biomedical engineering content with proper form
 
 ## Coming soon:
 - Fine tuned model for verifying outputs from Grok 4
-- RAG from verified resources
