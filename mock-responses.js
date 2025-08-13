@@ -156,18 +156,24 @@ function getMockResponse(userMessage) {
 function createMockSSEStream(content) {
   const words = content.split(' ');
   let index = 0;
+  let cancelled = false;
   
   return {
+    cancel() {
+      cancelled = true;
+    },
     async* generate() {
       // Send initial chunk
-      yield `data: ${JSON.stringify({
-        choices: [{
-          delta: { content: "" }
-        }]
-      })}\n\n`;
+      if (!cancelled) {
+        yield `data: ${JSON.stringify({
+          choices: [{
+            delta: { content: "" }
+          }]
+        })}\n\n`;
+      }
       
       // Send content word by word to simulate streaming
-      while (index < words.length) {
+      while (index < words.length && !cancelled) {
         const chunk = index === 0 ? words[index] : ' ' + words[index];
         yield `data: ${JSON.stringify({
           choices: [{
@@ -181,7 +187,9 @@ function createMockSSEStream(content) {
       }
       
       // Send completion signal
-      yield `data: [DONE]\n\n`;
+      if (!cancelled) {
+        yield `data: [DONE]\n\n`;
+      }
     }
   };
 }

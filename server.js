@@ -5,6 +5,7 @@ import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
 import { createHmac } from 'crypto';
 import { getMockResponse, createMockSSEStream } from './mock-responses.js';
+import rag from './rag.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -147,25 +148,35 @@ if (!XAI_API_KEY) {
   console.log('[INFO] XAI_API_KEY loaded - using X.AI API');
 }
 
-const systemPrompt = `Role: Senior biomedical engineering copilot for practitioners.
+const systemPrompt = `Role: Senior biomedical engineering copilot for practitioners.\n\nOperating principles:\n- Assume baseline practitioner knowledge: you can use standard terms (e.g., Poisson’s ratio, Nyquist sampling, impedance, HbA1c, ISO 13485) without lengthy definitions.\n- Be concise and clinically/technically actionable. Favor bullet points, numbered steps, and brief justifications.\n- Use equations and units when material, otherwise avoid math bloat.\n- Note safety, regulatory, and validation considerations succinctly (e.g., IEC 60601, FDA 21 CFR 820, ISO 14971) when relevant.\n- When uncertain, state assumptions and propose quick validation steps.\n- Prefer pragmatic designs, references, and checks over theory recaps.\n- If a result depends on parameters, provide defaults and ranges appropriate to typical biomedical contexts.\n- Provide past examples of how something went if there are any.\n\nResponse style:\n- Start with a one‑sentence answer, then compact details.\n- Use structured sections: Summary, Steps, Key Params, Risks/Checks, References (short).\n- Keep code and math minimal, but correct and runnable when requested.\n- Avoid overexplaining basics; this is for field practitioners.\n- If the user asks for a different response style, provide it.\n`;
 
-Operating principles:
-- Assume baseline practitioner knowledge: you can use standard terms (e.g., Poisson’s ratio, Nyquist sampling, impedance, HbA1c, ISO 13485) without lengthy definitions.
-- Be concise and clinically/technically actionable. Favor bullet points, numbered steps, and brief justifications.
-- Use equations and units when material, otherwise avoid math bloat.
-- Note safety, regulatory, and validation considerations succinctly (e.g., IEC 60601, FDA 21 CFR 820, ISO 14971) when relevant.
-- When uncertain, state assumptions and propose quick validation steps.
-- Prefer pragmatic designs, references, and checks over theory recaps.
-- If a result depends on parameters, provide defaults and ranges appropriate to typical biomedical contexts.
-- Provide past examples of how something went if there are any.
+// Mock tool definitions
+const tools = {
+    get_research_papers: ({ query }) => {
+        return {
+            papers: [
+                { title: `Paper on ${query}`, summary: 'This is a summary.' }
+            ]
+        }
+    }
+}
 
-Response style:
-- Start with a one‑sentence answer, then compact details.
-- Use structured sections: Summary, Steps, Key Params, Risks/Checks, References (short).
-- Keep code and math minimal, but correct and runnable when requested.
-- Avoid overexplaining basics; this is for field practitioners.
-- If the user asks for a different response style, provide it.
-`;
+const tool_definitions = [
+    {
+        name: 'get_research_papers',
+        description: 'Get research papers on a specific topic.',
+        input_schema: {
+            type: 'object',
+            properties: {
+                query: {
+                    type: 'string',
+                    description: 'The topic to search for.'
+                }
+            },
+            required: ['query']
+        }
+    }
+]
 
 app.post('/api/chat', async (req, res) => {
   let mockStream;
@@ -205,12 +216,16 @@ app.post('/api/chat', async (req, res) => {
       return res.end();
     }
 
+    const user_query = messages[messages.length - 1].content;
+    const rag_context = await rag.retrieve_from_rag(user_query);
+
     const fullMessages = [
       { role: 'system', content: systemPrompt },
       ...messages,
+      { role: 'user', content: `${user_query}\n\nRetrieved Context:\n${rag_context}` }
     ];
 
-    const response = await fetch('https://api.x.ai/v1/chat/completions', {
+    let response = await fetch('https://api.x.ai/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -219,37 +234,58 @@ app.post('/api/chat', async (req, res) => {
       body: JSON.stringify({
         model: XAI_MODEL,
         messages: fullMessages,
-        stream: true,
+        stream: false, // Important: Turn off streaming for tool calls
         temperature: 0.2,
         max_tokens: 1200,
+        tools: tool_definitions,
+        tool_choice: "auto"
       }),
     });
 
-    if (!response.ok || !response.body) {
-      console.warn('[WARN] API request failed, falling back to mock response');
-      const userMessage = messages[messages.length - 1]?.content || '';
-      const mockContent = getMockResponse(userMessage);
-      mockStream = createMockSSEStream(mockContent);
-      
-      for await (const chunk of mockStream.generate()) {
-        if (req.aborted) break;
-        res.write(chunk);
-      }
-      
-      return res.end();
+    let response_json = await response.json();
+    let message = response_json.choices[0].message;
+    fullMessages.push(message);
+
+    while (message.tool_calls) {
+        for (const tool_call of message.tool_calls) {
+            const func_name = tool_call.function.name;
+            const args = tool_call.function.arguments;
+            const tool_result = tools[func_name](args);
+            
+            await rag.add_to_rag([JSON.stringify(tool_result)]);
+
+            fullMessages.push({
+                role: 'tool',
+                name: func_name,
+                content: JSON.stringify(tool_result)
+            });
+        }
+
+        response = await fetch('https://api.x.ai/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${XAI_API_KEY}`,
+            },
+            body: JSON.stringify({
+                model: XAI_MODEL,
+                messages: fullMessages,
+                stream: false,
+                temperature: 0.2,
+                max_tokens: 1200,
+                tools: tool_definitions,
+                tool_choice: "auto"
+            }),
+        });
+        response_json = await response.json();
+        message = response_json.choices[0].message;
+        fullMessages.push(message);
     }
 
-    reader = response.body.getReader();
-    const textDecoder = new TextDecoder();
-
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done || req.aborted) break;
-      const chunk = textDecoder.decode(value);
-      res.write(chunk);
-    }
-
+    res.write(`data: ${JSON.stringify({ content: message.content })}\n\n`);
+    await rag.save_rag_index();
     return res.end();
+
   } catch (err) {
     if (err.name === 'AbortError') {
       console.log('[INFO] Request aborted by client');
@@ -282,6 +318,7 @@ app.get('/health', (_req, res) => {
 });
 
 const port = process.env.PORT || 3000;
-app.listen(port, () => {
+app.listen(port, async () => {
+  await rag.load_rag_index();
   console.log(`Biomed Chat listening on http://localhost:${port}`);
 }); 
