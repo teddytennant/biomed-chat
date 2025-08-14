@@ -14,6 +14,7 @@ scipy>=1.11.0  # For scientific computing
 pandas>=2.0.0  # For data manipulation
 matplotlib>=3.7.0  # For plotting
 plotly>=5.14.0  # For interactive plots
+streamlit-lottie>=0.0.5  # For animations
 
 # API and networking
 requests>=2.31.0
