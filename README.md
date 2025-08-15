@@ -2,8 +2,11 @@
 
 Practitioner-focused chatbot UI for biomedical engineers. Proxies to Grok‑4 via xAI API with RAG and a tailored system prompt that assumes baseline field expertise.
 
+**Note on API Providers:** This project is built around the Grok API, which has demonstrated high performance on benchmarks. While other providers are supported, Grok is recommended for the best experience.
+
 ## Features
 
+- **Multi-API Support**: Supports Grok, Gemini, OpenAI, and Anthropic APIs.
 - **Smart API Fallback**: Automatically uses mock responses when API key is not available
 - **Biomedical Focus**: Specialized responses for biomedical engineering topics
 - **Streaming Responses**: Real-time response streaming for better UX
@@ -16,16 +19,23 @@ Practitioner-focused chatbot UI for biomedical engineers. Proxies to Grok‑4 vi
 
 ```sh
 npm install
+pip install -r requirements.txt
 ```
 
 3. Configure `.env` file:
 
 ```env
-# For full AI functionality:
-XAI_API_KEY=your_xai_api_key_here
+# Set the API provider
+API_PROVIDER="grok"  # "grok", "gemini", "openai", or "anthropic"
+
+# For full AI functionality (only one is required based on the provider):
+GROK_API_KEY="your_grok_api_key_here"
+GEMINI_API_KEY="your_gemini_api_key_here"
+OPENAI_API_KEY="your_openai_api_key_here"
+ANTHROPIC_API_KEY="your_anthropic_api_key_here"
 
 # For mock/demo mode, comment out the API key:
-# XAI_API_KEY=your_xai_api_key_here
+# GROK_API_KEY="your_grok_api_key_here"
 
 # Optional overrides:
 # XAI_MODEL=grok-4
@@ -43,7 +53,7 @@ Open `http://localhost:3000`.
 
 ## Mock Response System
 
-When `XAI_API_KEY` is not set, the system automatically provides mock responses for:
+When the corresponding API key for the selected provider is not set, the system automatically provides mock responses for:
 
 - **ECG/EKG Analysis**: Signal processing, QRS detection, rhythm analysis
 - **Bioimpedance**: Measurement techniques, safety considerations
@@ -56,7 +66,7 @@ Mock responses include realistic biomedical engineering content with proper form
 ## API Modes
 
 **Production Mode** (API key configured):
-- Uses X.AI Grok-4 API for dynamic responses
+- Uses the selected API provider for dynamic responses
 - Falls back to mocks if API fails
 
 **Demo/Mock Mode** (no API key):

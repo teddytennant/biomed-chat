@@ -4,8 +4,10 @@ from typing import List, Dict, Any
 
 # API Configuration
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "your-api-key-here")
-GROK_API_KEY = os.getenv("GROK_API_KEY", "your-api-key-here")  # Set via environment variable
-API_PROVIDER = os.getenv("API_PROVIDER", "grok")  # "grok" or "gemini"
+GROK_API_KEY = os.getenv("GROK_API_KEY", "your-api-key-here")
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "your-api-key-here")
+ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "your-api-key-here")
+API_PROVIDER = os.getenv("API_PROVIDER", "grok")  # "grok", "gemini", "openai", or "anthropic"
 
 # System Prompt
 SYSTEM_PROMPT = """You are an expert biomedical engineering assistant with deep knowledge in:

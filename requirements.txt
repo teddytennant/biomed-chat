@@ -4,6 +4,8 @@ openai>=1.0.0
 numpy>=1.24.0
 faiss-cpu>=1.7.4  # Use faiss-gpu if you have CUDA support
 sentence-transformers>=2.2.2
+google-generativeai>=0.8.5
+anthropic>=0.21.3
 
 # For biomedical tools (optional - add as needed)
 biopython>=1.81  # For actual sequence analysis

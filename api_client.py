@@ -1,6 +1,7 @@
 # api_client.py
 from openai import OpenAI
 import google.generativeai as genai
+import anthropic
 import json
 import config
 from rag import add_to_rag, retrieve_from_rag, save_rag_index
@@ -18,9 +19,13 @@ if API_PROVIDER == "grok" and (not config.GROK_API_KEY or config.GROK_API_KEY ==
     USE_MOCK_MODE = True
 elif API_PROVIDER == "gemini" and (not config.GEMINI_API_KEY or config.GEMINI_API_KEY == "your-api-key-here"):
     USE_MOCK_MODE = True
+elif API_PROVIDER == "openai" and (not config.OPENAI_API_KEY or config.OPENAI_API_KEY == "your-api-key-here"):
+    USE_MOCK_MODE = True
+elif API_PROVIDER == "anthropic" and (not config.ANTHROPIC_API_KEY or config.ANTHROPIC_API_KEY == "your-api-key-here"):
+    USE_MOCK_MODE = True
 
 # Initialize clients and mock generators
-grok_client, gemini_model = None, None
+grok_client, gemini_model, openai_client, anthropic_client = None, None, None, None
 mock_generator, mock_tools = None, None
 
 if USE_MOCK_MODE:
@@ -45,6 +50,22 @@ else:
             gemini_model = genai.GenerativeModel('gemini-pro')
         except Exception as e:
             print(f"Warning: Failed to initialize Gemini client: {e}. Falling back to mock mode.")
+            USE_MOCK_MODE = True
+            mock_generator = MockResponseGenerator()
+            mock_tools = MockToolExecutor()
+    elif API_PROVIDER == "openai":
+        try:
+            openai_client = OpenAI(api_key=config.OPENAI_API_KEY)
+        except Exception as e:
+            print(f"Warning: Failed to initialize OpenAI client: {e}. Falling back to mock mode.")
+            USE_MOCK_MODE = True
+            mock_generator = MockResponseGenerator()
+            mock_tools = MockToolExecutor()
+    elif API_PROVIDER == "anthropic":
+        try:
+            anthropic_client = anthropic.Anthropic(api_key=config.ANTHROPIC_API_KEY)
+        except Exception as e:
+            print(f"Warning: Failed to initialize Anthropic client: {e}. Falling back to mock mode.")
             USE_MOCK_MODE = True
             mock_generator = MockResponseGenerator()
             mock_tools = MockToolExecutor()
@@ -114,6 +135,74 @@ def process_gemini_query(user_query, rag_context):
         print(f"Gemini API call failed: {e}. Using mock response.")
         return f"⚠️ **API Error - Using Demo Mode**\n\n{mock_generator.get_response(user_query)}"
 
+def process_openai_query(user_query, rag_context):
+    """Process query using OpenAI API."""
+    augmented_query = f"{user_query}\n\nRetrieved Context:\n{rag_context}" if rag_context else user_query
+    
+    messages = [
+        {"role": "system", "content": config.SYSTEM_PROMPT},
+        {"role": "user", "content": augmented_query}
+    ]
+    
+    try:
+        response = openai_client.chat.completions.create(
+            model="gpt-4",
+            messages=messages,
+            tools=config.TOOL_DEFINITIONS,
+            tool_choice="auto"
+        )
+        
+        # Handle tool calls
+        while response.choices[0].message.tool_calls:
+            messages.append(response.choices[0].message)
+            for tool_call in response.choices[0].message.tool_calls:
+                func_name = tool_call.function.name
+                args = json.loads(tool_call.function.arguments)
+                
+                try:
+                    tool_result = getattr(tools, func_name)(**args)
+                except Exception as e:
+                    tool_result = {"error": str(e)}
+                
+                add_to_rag([f"[Tool: {func_name}] {json.dumps(tool_result)}"])
+                
+                messages.append({
+                    "role": "tool",
+                    "tool_call_id": tool_call.id,
+                    "name": func_name,
+                    "content": json.dumps(tool_result)
+                })
+            
+            response = openai_client.chat.completions.create(
+                model="gpt-4",
+                messages=messages,
+                tools=config.TOOL_DEFINITIONS,
+                tool_choice="auto"
+            )
+            
+        return response.choices[0].message.content
+        
+    except Exception as e:
+        print(f"OpenAI API call failed: {e}. Using mock response.")
+        return f"⚠️ **API Error - Using Demo Mode**\n\n{mock_generator.get_response(user_query)}"
+
+def process_anthropic_query(user_query, rag_context):
+    """Process query using Anthropic API."""
+    augmented_query = f"{user_query}\n\nRetrieved Context:\n{rag_context}" if rag_context else user_query
+    
+    try:
+        response = anthropic_client.messages.create(
+            model="claude-3-opus-20240229",
+            system=config.SYSTEM_PROMPT,
+            messages=[
+                {"role": "user", "content": augmented_query}
+            ]
+        )
+        return response.content[0].text
+    except Exception as e:
+        print(f"Anthropic API call failed: {e}. Using mock response.")
+        return f"⚠️ **API Error - Using Demo Mode**\n\n{mock_generator.get_response(user_query)}"
+
 def process_query(user_query):
     """
     Process user query with RAG, tool calling, and provider routing.
@@ -128,6 +217,10 @@ def process_query(user_query):
         response = process_grok_query(user_query, rag_context)
     elif API_PROVIDER == "gemini":
         response = process_gemini_query(user_query, rag_context)
+    elif API_PROVIDER == "openai":
+        response = process_openai_query(user_query, rag_context)
+    elif API_PROVIDER == "anthropic":
+        response = process_anthropic_query(user_query, rag_context)
     else:
         return "Error: Invalid API provider specified in config."
         
@@ -144,8 +237,10 @@ def process_query_with_context(user_query, conversation_history=None):
         # Simplified mock response for conversational context
         return mock_generator.get_response(user_query), []
 
-    # Build messages for Grok
-    if API_PROVIDER == "grok":
+    # Build messages for Grok/OpenAI
+    if API_PROVIDER in ["grok", "openai"]:
+        client = grok_client if API_PROVIDER == "grok" else openai_client
+        model = "grok-4" if API_PROVIDER == "grok" else "gpt-4"
         messages = [{"role": "system", "content": config.SYSTEM_PROMPT}]
         if conversation_history:
             messages.extend(conversation_history)
@@ -153,8 +248,8 @@ def process_query_with_context(user_query, conversation_history=None):
         user_message = f"{user_query}\n\nRetrieved Context:\n{rag_context}" if rag_context else user_query
         messages.append({"role": "user", "content": user_message})
         
-        response = grok_client.chat.completions.create(
-            model="grok-4",
+        response = client.chat.completions.create(
+            model=model,
             messages=messages
         )
         final_response = response.choices[0].message.content
@@ -181,6 +276,26 @@ def process_query_with_context(user_query, conversation_history=None):
             {"role": "user", "content": user_query},
             {"role": "assistant", "content": final_response}
         ]
+        
+        return final_response, new_history
+
+    # Build messages for Anthropic
+    elif API_PROVIDER == "anthropic":
+        messages = []
+        if conversation_history:
+            messages.extend(conversation_history)
+        
+        user_message = f"{user_query}\n\nRetrieved Context:\n{rag_context}" if rag_context else user_query
+        messages.append({"role": "user", "content": user_message})
+        
+        response = anthropic_client.messages.create(
+            model="claude-3-opus-20240229",
+            system=config.SYSTEM_PROMPT,
+            messages=messages
+        )
+        final_response = response.content[0].text
+        
+        new_history = messages + [{"role": "assistant", "content": final_response}]
         
         return final_response, new_history
         
