@@ -1,17 +1,10 @@
 import React from 'react';
 import Chat from './Chat';
-import './App.css';
+import 'bootstrap/dist/css/bootstrap.min.css';
 
 function App() {
   return (
-    <div className="App">
-      <header className="App-header">
-        <h1>Biomed Chat</h1>
-      </header>
-      <main>
-        <Chat />
-      </main>
-    </div>
+    <Chat />
   );
 }
 
