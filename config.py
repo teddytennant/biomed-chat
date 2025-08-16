@@ -1,13 +1,15 @@
-# config.py
+"""Configuration for the Biomed chat application."""
+
 import os
-from typing import List, Dict, Any
 
 # API Configuration
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "your-api-key-here")
 GROK_API_KEY = os.getenv("GROK_API_KEY", "your-api-key-here")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "your-api-key-here")
 ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "your-api-key-here")
-API_PROVIDER = os.getenv("API_PROVIDER", "grok")  # "grok", "gemini", "openai", or "anthropic"
+API_PROVIDER = os.getenv(
+    "API_PROVIDER", "grok"
+)  # "grok", "gemini", "openai", or "anthropic"
 
 # System Prompt
 SYSTEM_PROMPT = """You are an expert biomedical engineering assistant with deep knowledge in:
@@ -34,17 +36,17 @@ TOOL_DEFINITIONS = [
                 "properties": {
                     "query": {
                         "type": "string",
-                        "description": "Search query for PubMed"
+                        "description": "Search query for PubMed",
                     },
                     "max_results": {
                         "type": "integer",
                         "description": "Maximum number of results to return",
-                        "default": 5
-                    }
+                        "default": 5,
+                    },
                 },
-                "required": ["query"]
-            }
-        }
+                "required": ["query"],
+            },
+        },
     },
     {
         "type": "function",
@@ -56,17 +58,17 @@ TOOL_DEFINITIONS = [
                 "properties": {
                     "sequence": {
                         "type": "string",
-                        "description": "Biological sequence to analyze"
+                        "description": "Biological sequence to analyze",
                     },
                     "sequence_type": {
                         "type": "string",
                         "enum": ["DNA", "RNA", "protein"],
-                        "description": "Type of biological sequence"
-                    }
+                        "description": "Type of biological sequence",
+                    },
                 },
-                "required": ["sequence", "sequence_type"]
-            }
-        }
+                "required": ["sequence", "sequence_type"],
+            },
+        },
     },
     {
         "type": "function",
@@ -78,20 +80,27 @@ TOOL_DEFINITIONS = [
                 "properties": {
                     "smiles": {
                         "type": "string",
-                        "description": "SMILES notation of the compound"
+                        "description": "SMILES notation of the compound",
                     },
                     "properties": {
                         "type": "array",
                         "items": {
                             "type": "string",
-                            "enum": ["molecular_weight", "logP", "tpsa", "hbd", "hba", "rotatable_bonds"]
+                            "enum": [
+                                "molecular_weight",
+                                "logP",
+                                "tpsa",
+                                "hbd",
+                                "hba",
+                                "rotatable_bonds",
+                            ],
                         },
-                        "description": "Properties to calculate"
-                    }
+                        "description": "Properties to calculate",
+                    },
                 },
-                "required": ["smiles"]
-            }
-        }
+                "required": ["smiles"],
+            },
+        },
     },
     {
         "type": "function",
@@ -101,27 +110,21 @@ TOOL_DEFINITIONS = [
             "parameters": {
                 "type": "object",
                 "properties": {
-                    "dose": {
-                        "type": "number",
-                        "description": "Drug dose in mg"
-                    },
-                    "half_life": {
-                        "type": "number",
-                        "description": "Drug half-life in hours"
-                    },
+                    "dose": {"type": "number", "description": "Drug dose in mg"},
+                    "half_life": {"type": "number", "description": "Drug half-life in hours"},
                     "volume_distribution": {
                         "type": "number",
-                        "description": "Volume of distribution in L/kg"
+                        "description": "Volume of distribution in L/kg",
                     },
                     "time_points": {
                         "type": "integer",
                         "description": "Number of time points to simulate",
-                        "default": 24
-                    }
+                        "default": 24,
+                    },
                 },
-                "required": ["dose", "half_life", "volume_distribution"]
-            }
-        }
+                "required": ["dose", "half_life", "volume_distribution"],
+            },
+        },
     },
     {
         "type": "function",
@@ -133,23 +136,28 @@ TOOL_DEFINITIONS = [
                 "properties": {
                     "image_path": {
                         "type": "string",
-                        "description": "Path to the medical image file"
+                        "description": "Path to the medical image file",
                     },
                     "modality": {
                         "type": "string",
                         "enum": ["CT", "MRI", "X-ray", "ultrasound"],
-                        "description": "Imaging modality"
+                        "description": "Imaging modality",
                     },
                     "analysis_type": {
                         "type": "string",
-                        "enum": ["segmentation", "measurement", "enhancement", "registration"],
-                        "description": "Type of analysis to perform"
-                    }
+                        "enum": [
+                            "segmentation",
+                            "measurement",
+                            "enhancement",
+                            "registration",
+                        ],
+                        "description": "Type of analysis to perform",
+                    },
                 },
-                "required": ["image_path", "modality"]
-            }
-        }
-    }
+                "required": ["image_path", "modality"],
+            },
+        },
+    },
 ]
 
 # RAG Configuration
@@ -174,5 +182,5 @@ STREAMLIT_THEME = {
     "backgroundColor": "#FFFFFF",
     "secondaryBackgroundColor": "#F0F2F6",
     "textColor": "#262730",
-    "font": "sans serif"
+    "font": "sans serif",
 }

@@ -4,83 +4,14 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
 import { createHmac } from 'crypto';
-import { getMockResponse, createMockSSEStream } from './mock-responses.js';
-import { pipeline } from '@xenova/transformers';
-import fs from 'fs/promises';
-
-// --- RAG Implementation ---
-let embedder;
-let index = []; // Simple array to store { text, embedding }
-
-async function initializeEmbedder(modelName = 'all-MiniLM-L6-v2') {
-  if (!embedder) {
-    embedder = await pipeline('feature-extraction', modelName);
-  }
-}
-
-function cosineSimilarity(vecA, vecB) {
-  let dotProduct = 0.0;
-  let normA = 0.0;
-  let normB = 0.0;
-  for (let i = 0; i < vecA.length; i++) {
-    dotProduct += vecA[i] * vecB[i];
-    normA += vecA[i] * vecA[i];
-    normB += vecB[i] * vecB[i];
-  }
-  return dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
-}
-
-async function add_to_rag(chunks) {
-  await initializeEmbedder();
-  for (const chunk of chunks) {
-    const embedding = await embedder(chunk, { pooling: 'mean', normalize: true });
-    index.push({ text: chunk, embedding: embedding.data });
-  }
-}
-
-async function retrieve_from_rag(query, top_k = 3) {
-  if (index.length === 0) {
-    return "";
-  }
-  await initializeEmbedder();
-  const queryEmbedding = await embedder(query, { pooling: 'mean', normalize: true });
-
-  const similarities = index.map(item => ({
-    text: item.text,
-    similarity: cosineSimilarity(queryEmbedding.data, item.embedding)
-  }));
-
-  similarities.sort((a, b) => b.similarity - a.similarity);
-
-  return similarities.slice(0, top_k).map(item => item.text).join('\n\n');
-}
-
-async function save_rag_index(filePath = 'rag_index.json') {
-  await fs.writeFile(filePath, JSON.stringify(index));
-}
-
-async function load_rag_index(filePath = 'rag_index.json') {
-  try {
-    const data = await fs.readFile(filePath, 'utf-8');
-    index = JSON.parse(data);
-  } catch (error) {
-    if (error.code === 'ENOENT') {
-      console.log('No RAG index found, starting with an empty one.');
-      index = [];
-    } else {
-      throw error;
-    }
-  }
-}
-// --- End RAG Implementation ---
-
+import fetch from 'node-fetch'; // Using node-fetch to call the Python API
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Load .env explicitly from CWD first, then fallback to server directory
 dotenv.config({ path: path.join(process.cwd(), '.env') });
-if (!process.env.XAI_API_KEY) {
+if (!process.env.SITE_PASSWORD) {
   dotenv.config({ path: path.join(__dirname, '.env') });
 }
 
@@ -89,7 +20,7 @@ app.use(cors());
 app.use(express.json({ limit: '2mb' }));
 app.use(express.urlencoded({ extended: false }));
 
-// Enable password-only protection site-wide if a password is provided
+// --- Start: Auth Middleware (largely unchanged) ---
 const SITE_PASSWORD = process.env.SITE_PASSWORD || process.env.BASIC_AUTH_PASS || '';
 const AUTH_COOKIE_NAME = 'bc_auth';
 const AUTH_COOKIE_SEED = 'biomed-chat';
@@ -120,14 +51,11 @@ function isHtmlRequest(req) {
 
 function requireSitePassword(req, res, next) {
   if (!SITE_PASSWORD) return next();
-
   const urlPath = req.path || req.url;
   if (urlPath.startsWith('/login') || urlPath === '/health') return next();
-
   const cookies = parseCookies(req);
   const expected = computeAuthCookieValue();
   if (cookies[AUTH_COOKIE_NAME] === expected) return next();
-
   if (isHtmlRequest(req)) {
     return res.redirect(302, '/login');
   }
@@ -140,244 +68,147 @@ if (SITE_PASSWORD) {
   console.warn('[WARN] SITE_PASSWORD not set. Site is NOT password protected.');
 }
 
-// Public login/logout endpoints
 function renderLoginHtml(errorMessage = '') {
-  const errorBlock = errorMessage
-    ? `<div style="color:#b00020; margin-bottom: 12px;">${errorMessage}</div>`
-    : '';
-  return `<!doctype html>
-<html lang="en">
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Biomed Chat – Sign in</title>
-<style>
-  body { font-family: -apple-system, system-ui, Segoe UI, Roboto, Helvetica, Arial, sans-serif; background: #0b0f19; color: #e6eaf2; display: grid; place-items: center; min-height: 100vh; margin: 0; }
-  .card { background: #121826; border: 1px solid #222b45; padding: 28px; border-radius: 12px; width: 100%; max-width: 360px; box-shadow: 0 10px 30px rgba(0,0,0,0.35); }
-  h1 { margin: 0 0 16px; font-size: 18px; font-weight: 600; }
-  label { display: block; margin: 0 0 8px; font-size: 12px; color: #a0acc0; }
-  input[type=password] { width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid #2a3553; background: #0b1220; color: #e6eaf2; outline: none; }
-  input[type=password]:focus { border-color: #4c8dff; box-shadow: 0 0 0 3px rgba(76, 141, 255, 0.2); }
-  button { margin-top: 14px; width: 100%; padding: 10px 12px; border-radius: 8px; background: #2f6feb; color: white; border: none; cursor: pointer; font-weight: 600; }
-  button:hover { background: #275bd4; }
-  .footer { margin-top: 12px; font-size: 12px; color: #8b97ad; text-align: center; }
-</style>
-<body>
-  <form class="card" method="post" action="/login">
-    <h1>Enter password</h1>
-    ${errorBlock}
-    <label for="password">Password</label>
-    <input id="password" name="password" type="password" autocomplete="current-password" autofocus required />
-    <button type="submit">Continue</button>
-    <div class="footer">Access is restricted</div>
-  </form>
-</body>
-</html>`;
+    const errorBlock = errorMessage
+      ? `<div style="color:#b00020; margin-bottom: 12px;">${errorMessage}</div>`
+      : '';
+    return `<!doctype html>
+  <html lang="en">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Biomed Chat – Sign in</title>
+  <style>
+    body { font-family: -apple-system, system-ui, Segoe UI, Roboto, Helvetica, Arial, sans-serif; background: #0b0f19; color: #e6eaf2; display: grid; place-items: center; min-height: 100vh; margin: 0; }
+    .card { background: #121826; border: 1px solid #222b45; padding: 28px; border-radius: 12px; width: 100%; max-width: 360px; box-shadow: 0 10px 30px rgba(0,0,0,0.35); }
+    h1 { margin: 0 0 16px; font-size: 18px; font-weight: 600; }
+    label { display: block; margin: 0 0 8px; font-size: 12px; color: #a0acc0; }
+    input[type=password] { width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid #2a3553; background: #0b1220; color: #e6eaf2; outline: none; }
+    input[type=password]:focus { border-color: #4c8dff; box-shadow: 0 0 0 3px rgba(76, 141, 255, 0.2); }
+    button { margin-top: 14px; width: 100%; padding: 10px 12px; border-radius: 8px; background: #2f6feb; color: white; border: none; cursor: pointer; font-weight: 600; }
+    button:hover { background: #275bd4; }
+    .footer { margin-top: 12px; font-size: 12px; color: #8b97ad; text-align: center; }
+  </style>
+  <body>
+    <form class="card" method="post" action="/login">
+      <h1>Enter password</h1>
+      ${errorBlock}
+      <label for="password">Password</label>
+      <input id="password" name="password" type="password" autocomplete="current-password" autofocus required />
+      <button type="submit">Continue</button>
+      <div class="footer">Access is restricted</div>
+    </form>
+  </body>
+  </html>`;
 }
 
 app.get('/login', (req, res) => {
-  if (!SITE_PASSWORD) return res.redirect(302, '/');
-  const cookies = parseCookies(req);
-  const expected = computeAuthCookieValue();
-  if (cookies[AUTH_COOKIE_NAME] === expected) return res.redirect(302, '/');
-  res.status(200).send(renderLoginHtml());
+    if (!SITE_PASSWORD) return res.redirect(302, '/');
+    const cookies = parseCookies(req);
+    const expected = computeAuthCookieValue();
+    if (cookies[AUTH_COOKIE_NAME] === expected) return res.redirect(302, '/');
+    res.status(200).send(renderLoginHtml());
 });
 
-app.post('/login', (req, res) => {
-  if (!SITE_PASSWORD) return res.redirect(302, '/');
-  const { password } = req.body || {};
-  if (password === SITE_PASSWORD) {
-    const expected = computeAuthCookieValue();
-    const isProd = process.env.NODE_ENV === 'production';
-    const cookie = `${AUTH_COOKIE_NAME}=${encodeURIComponent(expected)}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${60 * 60 * 24 * 30}${isProd ? '; Secure' : ''}`;
-    res.setHeader('Set-Cookie', cookie);
-    return res.redirect(302, '/');
-  }
-  res.status(401).send(renderLoginHtml('Incorrect password'));
+app.post('/login', express.urlencoded({ extended: true }), (req, res) => {
+    if (!SITE_PASSWORD) return res.redirect(302, '/');
+    const { password } = req.body || {};
+    if (password === SITE_PASSWORD) {
+      const expected = computeAuthCookieValue();
+      const isProd = process.env.NODE_ENV === 'production';
+      const cookie = `${AUTH_COOKIE_NAME}=${encodeURIComponent(expected)}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${60 * 60 * 24 * 30}${isProd ? '; Secure' : ''}`;
+      res.setHeader('Set-Cookie', cookie);
+      return res.redirect(302, '/');
+    }
+    res.status(401).send(renderLoginHtml('Incorrect password'));
 });
 
 app.get('/logout', (req, res) => {
-  const isProd = process.env.NODE_ENV === 'production';
-  res.setHeader('Set-Cookie', `${AUTH_COOKIE_NAME}=; Path=/; HttpOnly; Max-Age=0; SameSite=Lax${isProd ? '; Secure' : ''}`);
-  res.redirect(302, '/login');
+    const isProd = process.env.NODE_ENV === 'production';
+    res.setHeader('Set-Cookie', `${AUTH_COOKIE_NAME}=; Path=/; HttpOnly; Max-Age=0; SameSite=Lax${isProd ? '; Secure' : ''}`);
+    res.redirect(302, '/login');
 });
+// --- End: Auth Middleware ---
 
 // Apply auth before serving static assets and API routes
 app.use(requireSitePassword);
 
 app.use(express.static(path.join(__dirname, 'public')));
 
-const XAI_API_KEY = process.env.XAI_API_KEY || '';
-const XAI_MODEL = process.env.XAI_MODEL || 'grok-4';
-
-if (!XAI_API_KEY) {
-  console.warn('[WARN] XAI_API_KEY is not set. Using mock responses for demonstration.');
-  console.warn('[INFO] To enable full functionality, add XAI_API_KEY to your .env file');
-} else {
-  console.log('[INFO] XAI_API_KEY loaded - using X.AI API');
-}
-
-const systemPrompt = `Role: Senior biomedical engineering copilot for practitioners.\n\nOperating principles:\n- Assume baseline practitioner knowledge: you can use standard terms (e.g., Poisson’s ratio, Nyquist sampling, impedance, HbA1c, ISO 13485) without lengthy definitions.\n- Be concise and clinically/technically actionable. Favor bullet points, numbered steps, and brief justifications.\n- Use equations and units when material, otherwise avoid math bloat.\n- Note safety, regulatory, and validation considerations succinctly (e.g., IEC 60601, FDA 21 CFR 820, ISO 14971) when relevant.\n- When uncertain, state assumptions and propose quick validation steps.\n- Prefer pragmatic designs, references, and checks over theory recaps.\n- If a result depends on parameters, provide defaults and ranges appropriate to typical biomedical contexts.\n- Provide past examples of how something went if there are any.\n\nResponse style:\n- Start with a one‑sentence answer, then compact details.\n- Use structured sections: Summary, Steps, Key Params, Risks/Checks, References (short).\n- Keep code and math minimal, but correct and runnable when requested.\n- Avoid overexplaining basics; this is for field practitioners.\n- If the user asks for a different response style, provide it.\n`;
-
-// Mock tool definitions
-const tools = {
-    get_research_papers: ({ query }) => {
-        return {
-            papers: [
-                { title: `Paper on ${query}`, summary: 'This is a summary.' }
-            ]
-        }
-    }
-}
-
-const tool_definitions = [
-    {
-        name: 'get_research_papers',
-        description: 'Get research papers on a specific topic.',
-        input_schema: {
-            type: 'object',
-            properties: {
-                query: {
-                    type: 'string',
-                    description: 'The topic to search for.'
-                }
-            },
-            required: ['query']
-        }
-    }
-]
+// --- New /api/chat using Python RAG service ---
+const PYTHON_API_URL = `http://localhost:${process.env.PYTHON_API_PORT || 8000}/api/chat`;
 
 app.post('/api/chat', async (req, res) => {
-  let mockStream;
-  let reader;
+  console.log('[INFO] Received chat request. Relaying to Python RAG service...');
 
   req.on('close', () => {
-    if (reader) {
-      reader.cancel().catch(e => console.warn('[WARN] Error cancelling reader:', e.message));
-    }
-    if (mockStream) {
-      mockStream.cancel();
-    }
-    console.log('[INFO] Client disconnected, stream closed.');
+    console.log('[INFO] Client disconnected, connection closed.');
     res.end();
   });
 
   try {
     const { messages } = req.body || {};
-    if (!Array.isArray(messages)) {
-      return res.status(400).json({ error: 'messages must be an array' });
+    if (!Array.isArray(messages) || messages.length === 0) {
+      return res.status(400).json({ error: 'messages must be a non-empty array' });
     }
 
+    const userQuery = messages[messages.length - 1].content;
+
+    const pythonServiceResponse = await fetch(PYTHON_API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+      body: JSON.stringify({ query: userQuery }),
+    });
+
+    if (!pythonServiceResponse.ok) {
+      const errorBody = await pythonServiceResponse.text();
+      console.error('[ERROR] Python service returned an error:', pythonServiceResponse.status, errorBody);
+      throw new Error(`Python service failed with status ${pythonServiceResponse.status}`);
+    }
+
+    const data = await pythonServiceResponse.json();
+    const responseText = data.response;
+
+    // The frontend expects a Server-Sent Event (SSE) stream.
+    // We will simulate a simple stream with a single data event.
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
 
-    if (!XAI_API_KEY) {
-      const userMessage = messages[messages.length - 1]?.content || '';
-      const mockContent = getMockResponse(userMessage);
-      mockStream = createMockSSEStream(mockContent);
-      
-      for await (const chunk of mockStream.generate()) {
-        if (req.aborted) break;
-        res.write(chunk);
-      }
-      
-      return res.end();
-    }
-
-    const user_query = messages[messages.length - 1].content;
-    const rag_context = await retrieve_from_rag(user_query);
-
-    const fullMessages = [
-      { role: 'system', content: systemPrompt },
-      ...messages,
-      { role: 'user', content: `${user_query}\n\nRetrieved Context:\n${rag_context}` }
-    ];
-
-    let response = await fetch('https://api.x.ai/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${XAI_API_KEY}`,
-      },
-      body: JSON.stringify({
-        model: XAI_MODEL,
-        messages: fullMessages,
-        stream: false, // Important: Turn off streaming for tool calls
-        temperature: 0.2,
-        max_tokens: 1200,
-        tools: tool_definitions,
-        tool_choice: "auto"
-      }),
-    });
-
-    let response_json = await response.json();
-    let message = response_json.choices[0].message;
-    fullMessages.push(message);
-
-    while (message.tool_calls) {
-        for (const tool_call of message.tool_calls) {
-            const func_name = tool_call.function.name;
-            const args = tool_call.function.arguments;
-            const tool_result = tools[func_name](args);
-            
-            await add_to_rag([JSON.stringify(tool_result)]);
-
-            fullMessages.push({
-                role: 'tool',
-                name: func_name,
-                content: JSON.stringify(tool_result)
-            });
+    // SSE format: data: { ...JSON... } \n\n
+    const ssePayload = {
+      choices: [{
+        delta: {
+          content: responseText
         }
+      }]
+    };
+    res.write(`data: ${JSON.stringify(ssePayload)}\n\n`);
+    res.write(`data: [DONE]\n\n`);
+    res.end();
 
-        response = await fetch('https://api.x.ai/v1/chat/completions', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${XAI_API_KEY}`,
-            },
-            body: JSON.stringify({
-                model: XAI_MODEL,
-                messages: fullMessages,
-                stream: false,
-                temperature: 0.2,
-                max_tokens: 1200,
-                tools: tool_definitions,
-                tool_choice: "auto"
-            }),
-        });
-        response_json = await response.json();
-        message = response_json.choices[0].message;
-        fullMessages.push(message);
-    }
-
-    res.write(`data: ${JSON.stringify({ content: message.content })}\n\n`);
-    await save_rag_index();
-    return res.end();
+    console.log('[INFO] Successfully relayed response from Python service.');
 
   } catch (err) {
     if (err.name === 'AbortError') {
       console.log('[INFO] Request aborted by client');
       return res.end();
     }
+    console.error('[ERROR] Failed to connect to Python RAG service:', err.message);
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
     
-    console.warn('[WARN] Error in chat endpoint, falling back to mock response:', err.message);
-    try {
-      const { messages } = req.body || {};
-      const userMessage = Array.isArray(messages) && messages.length > 0 ? messages[messages.length - 1]?.content || '' : '';
-      const mockContent = getMockResponse(userMessage);
-      mockStream = createMockSSEStream(mockContent);
-      
-      for await (const chunk of mockStream.generate()) {
-        if (req.aborted) break;
-        res.write(chunk);
-      }
-      
-      return res.end();
-    } catch (fallbackErr) {
-      res.write(`event: error\n`);
-      res.write(`data: ${JSON.stringify({ error: err?.message || 'Unknown error' })}\n\n`);
-      res.end();
-    }
+    const errorPayload = {
+        error: {
+            message: 'The backend RAG service is currently unavailable. Please try again later.'
+        }
+    };
+    res.write(`event: error\n`);
+    res.write(`data: ${JSON.stringify(errorPayload)}\n\n`);
+    res.end();
   }
 });
 
@@ -386,7 +217,9 @@ app.get('/health', (_req, res) => {
 });
 
 const port = process.env.PORT || 3000;
-app.listen(port, async () => {
-  await load_rag_index();
-  console.log(`Biomed Chat listening on http://localhost:${port}`);
+app.listen(port, () => {
+  console.log(`Biomed Chat (Node.js server) listening on http://localhost:${port}`);
+  console.log(`Expecting Python RAG service to be running at ${PYTHON_API_URL}`);
 });
+
+export default app;
