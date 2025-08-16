@@ -52,7 +52,8 @@ function isHtmlRequest(req) {
 function requireSitePassword(req, res, next) {
   if (!SITE_PASSWORD) return next();
   const urlPath = req.path || req.url;
-  if (urlPath.startsWith('/login') || urlPath === '/health') return next();
+  // Allow access to API routes for the frontend to call
+  if (urlPath.startsWith('/login') || urlPath === '/health' || urlPath.startsWith('/api')) return next();
   const cookies = parseCookies(req);
   const expected = computeAuthCookieValue();
   if (cookies[AUTH_COOKIE_NAME] === expected) return next();
@@ -129,12 +130,10 @@ app.get('/logout', (req, res) => {
 });
 // --- End: Auth Middleware ---
 
-// Apply auth before serving static assets and API routes
+// Apply auth to all routes before they are handled
 app.use(requireSitePassword);
 
-app.use(express.static(path.join(__dirname, 'public')));
-
-// --- New /api/chat using Python RAG service ---
+// --- API Routes ---
 const PYTHON_API_URL = `http://localhost:${process.env.PYTHON_API_PORT || 8000}/api/chat`;
 
 app.post('/api/chat', async (req, res) => {
@@ -171,19 +170,12 @@ app.post('/api/chat', async (req, res) => {
     const data = await pythonServiceResponse.json();
     const responseText = data.response;
 
-    // The frontend expects a Server-Sent Event (SSE) stream.
-    // We will simulate a simple stream with a single data event.
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
 
-    // SSE format: data: { ...JSON... } \n\n
     const ssePayload = {
-      choices: [{
-        delta: {
-          content: responseText
-        }
-      }]
+      choices: [{ delta: { content: responseText } }]
     };
     res.write(`data: ${JSON.stringify(ssePayload)}\n\n`);
     res.write(`data: [DONE]\n\n`);
@@ -192,19 +184,13 @@ app.post('/api/chat', async (req, res) => {
     console.log('[INFO] Successfully relayed response from Python service.');
 
   } catch (err) {
-    if (err.name === 'AbortError') {
-      console.log('[INFO] Request aborted by client');
-      return res.end();
-    }
     console.error('[ERROR] Failed to connect to Python RAG service:', err.message);
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
     
     const errorPayload = {
-        error: {
-            message: 'The backend RAG service is currently unavailable. Please try again later.'
-        }
+        error: { message: 'The backend RAG service is currently unavailable. Please try again later.' }
     };
     res.write(`event: error\n`);
     res.write(`data: ${JSON.stringify(errorPayload)}\n\n`);
@@ -216,10 +202,26 @@ app.get('/health', (_req, res) => {
   res.json({ ok: true });
 });
 
+// --- Serve React Frontend ---
+if (process.env.NODE_ENV === 'production') {
+  const clientBuildPath = path.join(__dirname, 'dist', 'client');
+  app.use(express.static(clientBuildPath));
+
+  // For any other GET request, serve the React app's index.html
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(clientBuildPath, 'index.html'));
+  });
+}
+
 const port = process.env.PORT || 3000;
 app.listen(port, () => {
   console.log(`Biomed Chat (Node.js server) listening on http://localhost:${port}`);
   console.log(`Expecting Python RAG service to be running at ${PYTHON_API_URL}`);
+  if (process.env.NODE_ENV === 'production') {
+    console.log('Serving production build of the frontend.');
+  } else {
+    console.log('Frontend is served by the Vite dev server. Run `npm run dev:frontend`.');
+  }
 });
 
 export default app;
