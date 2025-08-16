@@ -168,9 +168,19 @@ RAG_MODEL = "all-MiniLM-L6-v2"  # Embedding model for RAG
 # Optional: Biomedical-specific embedding model (requires more resources)
 # RAG_MODEL = "dmis-lab/biobert-base-cased-v1.2"  # For GPU environments
 
-# File paths
+# Persistence Configuration
+PERSISTENCE_TYPE = os.getenv("PERSISTENCE_TYPE", "file") # "file" or "redis"
+
+# File paths (used if PERSISTENCE_TYPE is "file")
 RAG_INDEX_PATH = "rag_index.faiss"
 RAG_DOCUMENTS_PATH = "documents.txt"
+
+# Redis Configuration (used if PERSISTENCE_TYPE is "redis")
+REDIS_HOST = os.getenv("REDIS_HOST", "localhost")
+REDIS_PORT = int(os.getenv("REDIS_PORT", 6379))
+REDIS_PASSWORD = os.getenv("REDIS_PASSWORD", None)
+REDIS_INDEX_KEY = "rag_index"
+REDIS_DOCS_KEY = "rag_documents"
 
 # Session Configuration
 MAX_CONVERSATION_LENGTH = 50  # Maximum number of messages to keep in context

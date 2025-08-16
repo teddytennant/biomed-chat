@@ -3,6 +3,7 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 from api_client import process_query
 import os
+from rag import initialize_persistence
 
 # Initialize FastAPI app
 app = FastAPI(
@@ -10,6 +11,14 @@ app = FastAPI(
     description="An API for the RAG-enhanced biomedical chatbot.",
     version="1.0.0",
 )
+
+@app.on_event("startup")
+async def startup_event():
+    """
+    On startup, initialize the RAG persistence layer.
+    """
+    print("Initializing persistence layer...")
+    initialize_persistence()
 
 # Define the request body model
 class ChatRequest(BaseModel):

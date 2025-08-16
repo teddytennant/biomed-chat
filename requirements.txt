@@ -23,9 +23,11 @@ requests>=2.31.0
 python-dotenv>=1.0.0  # For environment variables
 fastapi>=0.116.1
 uvicorn>=0.20.0
+redis>=5.0.0
 
 # Testing
 pytest>=7.4.0
+fakeredis>=2.2.0
 
 # Additional utilities
 Pillow>=10.0.0  # For image processing

@@ -1,20 +1,27 @@
 import os
 import pytest
-import rag  # Import the module itself to avoid stale global variables
+import rag
+import config
+from unittest.mock import patch
+import fakeredis
 
-# A fixture to ensure the RAG index is reset for each test
+# Fixture to reset the RAG state before each test
 @pytest.fixture(autouse=True)
-def reset_rag_index():
-    # Access and reset the global state via the module
+def reset_rag_state():
     rag.index.reset()
     rag.documents.clear()
+    rag.redis_client = None
+    # Clean up any potential leftover files
+    if os.path.exists(config.RAG_INDEX_PATH):
+        os.remove(config.RAG_INDEX_PATH)
+    if os.path.exists(config.RAG_DOCUMENTS_PATH):
+        os.remove(config.RAG_DOCUMENTS_PATH)
     yield
-    # Teardown: clean up any created files
-    if os.path.exists("test_rag_index.faiss"):
-        os.remove("test_rag_index.faiss")
-    if os.path.exists("documents.txt"):
-        # The rag.py module hardcodes 'documents.txt', so we clean it up
-        os.remove("documents.txt")
+    # Teardown after test
+    if os.path.exists(config.RAG_INDEX_PATH):
+        os.remove(config.RAG_INDEX_PATH)
+    if os.path.exists(config.RAG_DOCUMENTS_PATH):
+        os.remove(config.RAG_DOCUMENTS_PATH)
 
 def test_add_and_retrieve():
     """Tests that basic adding and retrieving of documents works."""
@@ -23,11 +30,7 @@ def test_add_and_retrieve():
         "The powerhouse of the cell is the mitochondria.",
     ]
     rag.add_to_rag(docs_to_add)
-
-    # Use top_k=1 to get the most relevant document and make the test deterministic
-    retrieved_context = rag.retrieve_from_rag(
-        "Tell me about the gene-editing tool", top_k=1
-    )
+    retrieved_context = rag.retrieve_from_rag("Tell me about the gene-editing tool", top_k=1)
     assert "CRISPR-Cas9" in retrieved_context
     assert "mitochondria" not in retrieved_context
 
@@ -36,31 +39,56 @@ def test_retrieve_from_empty_rag():
     retrieved_context = rag.retrieve_from_rag("Any query")
     assert retrieved_context == ""
 
-def test_persistence():
+def test_file_persistence():
     """
-    Tests that the RAG index and documents can be saved to and loaded from disk.
+    Tests that the RAG index and documents can be saved to and loaded from the file system.
     """
-    docs_to_add = ["This document tests the persistence feature."]
+    config.PERSISTENCE_TYPE = "file"
+    docs_to_add = ["This document tests file persistence."]
     rag.add_to_rag(docs_to_add)
-
     assert rag.index.ntotal == 1
 
-    # Save the index to a test-specific file
-    rag.save_rag_index(file_path='test_rag_index.faiss')
+    # Save to file
+    rag.save_rag_index()
 
-    # Reset the in-memory index to simulate an application restart
+    # Reset in-memory RAG
     rag.index.reset()
     rag.documents.clear()
     assert rag.index.ntotal == 0
 
-    # Load the index from the test-specific file
-    rag.load_rag_index(file_path='test_rag_index.faiss')
+    # Load from file
+    rag.load_rag_index()
 
-    # Check if the data was loaded correctly
     assert rag.index.ntotal == 1
     assert len(rag.documents) == 1
-    assert "persistence feature" in rag.documents[0]
+    assert "file persistence" in rag.documents[0]
 
-    # Verify that retrieval works after loading
-    retrieved_context = rag.retrieve_from_rag("persistence")
-    assert "persistence feature" in retrieved_context
+@patch('rag.redis.Redis', fakeredis.FakeRedis)
+def test_redis_persistence():
+    """
+    Tests that the RAG index and documents can be saved to and loaded from Redis.
+    """
+    config.PERSISTENCE_TYPE = "redis"
+    
+    # Initialize with the fake redis client
+    rag.initialize_persistence()
+    assert rag.redis_client is not None
+
+    docs_to_add = ["This document tests Redis persistence."]
+    rag.add_to_rag(docs_to_add)
+    assert rag.index.ntotal == 1
+
+    # Save to Redis
+    rag.save_rag_index()
+
+    # Reset in-memory RAG
+    rag.index.reset()
+    rag.documents.clear()
+    assert rag.index.ntotal == 0
+
+    # Load from Redis
+    rag.load_rag_from_redis()
+
+    assert rag.index.ntotal == 1
+    assert len(rag.documents) == 1
+    assert "Redis persistence" in rag.documents[0]
