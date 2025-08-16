@@ -1,3 +1,128 @@
-"""Biomedical engineering tools for the chatbot.
-These are sample implementations - replace with actual API calls or libraries as needed.
-"""import randomfrom datetime import datetimefrom typing import Any, Dict, Listimport numpy as npdef search_pubmed(query: str, max_results: int = 5) -> Dict[str, Any]:    """    Mock PubMed search - replace with actual PubMed API call.    In production, use Biopython's Entrez module or PubMed API directly.    """    # Sample mock results    mock_results = [        {            "title": f"Study on {query}: Recent advances in biomedical applications",            "authors": ["Smith J", "Johnson K", "Williams L"],            "journal": "Nature Biomedical Engineering",            "year": 2024,            "pmid": f"3456{random.randint(1000, 9999)}",            "abstract": f"This study investigates {query} in the context of modern biomedical engineering...",        },        {            "title": f"Machine learning approaches for {query} analysis",            "authors": ["Chen M", "Lee S", "Park J"],            "journal": "IEEE Trans Biomed Eng",            "year": 2023,            "pmid": f"3356{random.randint(1000, 9999)}",            "abstract": f"We present a novel ML framework for analyzing {query} data...",        },    ]    return {        "query": query,        "num_results": min(len(mock_results), max_results),        "results": mock_results[:max_results],    }def analyze_sequence(sequence: str, sequence_type: str) -> Dict[str, Any]:    """    Analyze biological sequences.    In production, use Biopython or similar libraries.    """    sequence = sequence.upper().replace(" ", "").replace("\n", "")    analysis = {        "sequence_type": sequence_type,        "length": len(sequence),        "sequence": sequence[:50] + "..." if len(sequence) > 50 else sequence,    }    if sequence_type == "DNA":        # DNA-specific analysis        gc_content = (sequence.count("G") + sequence.count("C")) / len(sequence) * 100        analysis.update(            {                "gc_content": f"{gc_content:.2f}%",                "a_count": sequence.count("A"),                "t_count": sequence.count("T"),                "g_count": sequence.count("G"),                "c_count": sequence.count("C"),                "complementary": sequence.translate(str.maketrans("ATGC", "TACG"))[:50]                + "...",            }        )    elif sequence_type == "RNA":        # RNA-specific analysis        gc_content = (sequence.count("G") + sequence.count("C")) / len(sequence) * 100        analysis.update(            {                "gc_content": f"{gc_content:.2f}%",                "a_count": sequence.count("A"),                "u_count": sequence.count("U"),                "g_count": sequence.count("G"),                "c_count": sequence.count("C"),                "has_poly_a": "AAA" in sequence[-20:],            }        )    elif sequence_type == "protein":        # Protein-specific analysis        hydrophobic = sum(sequence.count(aa) for aa in "AILMFWYV")        hydrophilic = sum(sequence.count(aa) for aa in "RNDQEHKS")        analysis.update(            {                "hydrophobic_residues": hydrophobic,                "hydrophilic_residues": hydrophilic,                "hydrophobicity_ratio": f"{hydrophobic/len(sequence)*100:.2f}%",                "aromatic_residues": sum(sequence.count(aa) for aa in "FWY"),                "charged_residues": sum(sequence.count(aa) for aa in "RHKDE"),            }        )    return analysisdef calculate_drug_properties(    smiles: str, properties: List[str] = None) -> Dict[str, Any]:    """    Calculate molecular properties from SMILES notation.    In production, use RDKit or similar cheminformatics libraries.    """    if properties is None:        properties = ["molecular_weight", "logP", "tpsa", "hbd", "hba"]    # Mock calculations - replace with actual RDKit calculations    results = {"smiles": smiles, "calculated_properties": {}}    if "molecular_weight" in properties:        # Estimate based on SMILES length (very rough approximation)        results["calculated_properties"]["molecular_weight"] = (            len(smiles) * 12 + random.uniform(-50, 50)        )    if "logP" in properties:        # Mock logP value (partition coefficient)        results["calculated_properties"]["logP"] = random.uniform(-2, 5)    if "tpsa" in properties:        # Mock TPSA (Topological Polar Surface Area)        results["calculated_properties"]["tpsa"] = random.uniform(20, 140)    if "hbd" in properties:        # Mock HBD (Hydrogen Bond Donors)        results["calculated_properties"]["hbd"] = random.randint(0, 5)    if "hba" in properties:        # Mock HBA (Hydrogen Bond Acceptors)        results["calculated_properties"]["hba"] = random.randint(0, 10)    if "rotatable_bonds" in properties:        # Mock rotatable bonds count        results["calculated_properties"]["rotatable_bonds"] = random.randint(0, 10)    # Add Lipinski's Rule of Five evaluation    if all(        prop in results["calculated_properties"]        for prop in ["molecular_weight", "logP", "hbd", "hba"]    ):        ro5_violations = 0        if results["calculated_properties"]["molecular_weight"] > 500:            ro5_violations += 1        if results["calculated_properties"]["logP"] > 5:            ro5_violations += 1        if results["calculated_properties"]["hbd"] > 5:            ro5_violations += 1        if results["calculated_properties"]["hba"] > 10:            ro5_violations += 1        results["lipinski_rule_of_five"] = {            "violations": ro5_violations,            "passes": ro5_violations <= 1,        }    return resultsdef simulate_pharmacokinetics(    dose: float, half_life: float, volume_distribution: float, time_points: int = 24) -> Dict[str, Any]:    """    Simulate basic pharmacokinetics using one-compartment model.    """    # Calculate elimination rate constant    ke = 0.693 / half_life  # ln(2) / t½    # Generate time points (in hours)    times = np.linspace(0, time_points, num=time_points * 4)  # Sample every 15 minutes    # Calculate concentration over time (single dose, IV administration assumed)    # C(t) = (Dose/Vd) * e^(-ke*t)    initial_concentration = dose / (volume_distribution * 70)  # Assume 70kg patient    concentrations = initial_concentration * np.exp(-ke * times)    # Calculate key PK parameters    auc = initial_concentration / ke  # Area under curve    clearance = volume_distribution * ke * 70  # Total body clearance    # Find therapeutic window (mock values)    therapeutic_min = initial_concentration * 0.2    time_above_min = (        times[concentrations > therapeutic_min][-1]        if any(concentrations > therapeutic_min)        else 0    )    return {        "parameters": {            "dose_mg": dose,            "half_life_hours": half_life,            "volume_distribution_L_kg": volume_distribution,            "elimination_rate_constant": f"{ke:.4f} /hr",            "clearance_L_hr": f"{clearance:.2f}",            "auc_mg_hr_L": f"{auc:.2f}",        },        "simulation": {            "time_points": times.tolist()[::4],  # Return hourly values            "concentrations_mg_L": concentrations.tolist()[::4],            "peak_concentration": f"{initial_concentration:.2f} mg/L",            "time_above_therapeutic": f"{time_above_min:.1f} hours",            "steady_state_time": f"{half_life * 5:.1f} hours (5 half-lives)",        },        "recommendations": {            "dosing_interval": f"Every {half_life * 1.5:.1f} hours for consistent levels",            "loading_dose": f"{dose * 2:.1f} mg for rapid steady-state",        },    }def analyze_medical_image(    image_path: str, modality: str, analysis_type: str = "measurement") -> Dict[str, Any]:    """    Mock medical image analysis.    In production, use libraries like SimpleITK, PyDICOM, or OpenCV.    """    # Mock analysis results based on modality and analysis type    results = {        "image_path": image_path,        "modality": modality,        "analysis_type": analysis_type,        "timestamp": datetime.now().isoformat(),    }    if modality == "CT":        results["measurements"] = {            "hounsfield_units_mean": random.uniform(-100, 100),            "hounsfield_units_std": random.uniform(10, 50),            "volume_analyzed_cm3": random.uniform(10, 200),            "slice_thickness_mm": 1.5,        }        if analysis_type == "segmentation":            results["segmentation"] = {                "regions_identified": ["liver", "spleen", "kidney_left", "kidney_right"],                "volumes_cm3": {                    "liver": random.uniform(1000, 2000),                    "spleen": random.uniform(150, 300),                },            }    elif modality == "MRI":        results["measurements"] = {            "signal_intensity_mean": random.uniform(100, 1000),            "signal_intensity_std": random.uniform(20, 100),            "contrast_ratio": random.uniform(1.5, 3.0),        }        if analysis_type == "segmentation":            results["segmentation"] = {                "tissue_types": ["gray_matter", "white_matter", "csf"],                "volumes_cm3": {                    "gray_matter": random.uniform(400, 600),                    "white_matter": random.uniform(400, 600),                    "csf": random.uniform(100, 200),                },            }    elif modality == "X-ray":        results["measurements"] = {            "density_mean": random.uniform(0.5, 2.0),            "contrast": random.uniform(0.1, 0.5),            "exposure_index": random.uniform(300, 500),        }        if analysis_type == "measurement":            results["anatomical_measurements"] = {                "cardiothoracic_ratio": random.uniform(0.4, 0.55),                "lung_field_clarity": "normal",            }    elif modality == "ultrasound":        results["measurements"] = {            "echogenicity": random.choice(["hypoechoic", "isoechoic", "hyperechoic"]),            "doppler_velocity_cm_s": random.uniform(20, 100),            "depth_cm": random.uniform(2, 15),        }        if analysis_type == "measurement":            results["flow_measurements"] = {                "peak_systolic_velocity": random.uniform(50, 150),                "end_diastolic_velocity": random.uniform(10, 40),                "resistance_index": random.uniform(0.5, 0.8),            }    return results# Additional utility functions for the toolsdef validate_sequence(sequence: str, sequence_type: str) -> bool:    """Validate if a sequence contains only valid characters."""    valid_chars = {        "DNA": set("ATGCN"),        "RNA": set("AUGCN"),        "protein": set("ACDEFGHIKLMNPQRSTVWY*"),    }    return all(c in valid_chars.get(sequence_type, set()) for c in sequence.upper())def format_publication(pub_data: Dict) -> str:    """Format publication data for display."""    return (        f"{pub_data['authors'][0]} et al. ({pub_data['year']}) "        f"{pub_data['title']}. {pub_data['journal']}. PMID: {pub_data['pmid']}"    )
+"""
+Biomedical engineering tools for the chatbot.
+These are functional implementations using public APIs and libraries.
+"""
+import requests
+from Bio.Seq import Seq
+from Bio.SeqUtils import gc_fraction
+from rdkit import Chem
+from rdkit.Chem import Descriptors, Lipinski
+
+def search_pubmed(query: str, max_results: int = 3) -> dict:
+    """
+    Search PubMed for biomedical literature using the NCBI E-utilities API.
+    """
+    base_url = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/"
+    search_url = f"{base_url}esearch.fcgi"
+    fetch_url = f"{base_url}efetch.fcgi"
+
+    try:
+        # Step 1: Search for PMIDs
+        search_params = {
+            "db": "pubmed",
+            "term": query,
+            "retmax": max_results,
+            "retmode": "json",
+        }
+        search_response = requests.get(search_url, params=search_params, timeout=10)
+        search_response.raise_for_status()
+        search_data = search_response.json()
+        pmids = search_data.get("esearchresult", {}).get("idlist", [])
+
+        if not pmids:
+            return {"query": query, "num_results": 0, "results": []}
+
+        # Step 2: Fetch details for the PMIDs
+        fetch_params = {
+            "db": "pubmed",
+            "id": ",".join(pmids),
+            "retmode": "xml",
+        }
+        fetch_response = requests.get(fetch_url, params=fetch_params, timeout=10)
+        fetch_response.raise_for_status()
+        
+        # Using ElementTree to parse the XML response
+        from xml.etree import ElementTree
+        root = ElementTree.fromstring(fetch_response.content)
+        results = []
+        for article in root.findall(".//PubmedArticle"):
+            title_element = article.find(".//ArticleTitle")
+            title = title_element.text if title_element is not None else "No title found"
+            
+            abstract_element = article.find(".//Abstract/AbstractText")
+            abstract = abstract_element.text if abstract_element is not None else "No abstract available."
+
+            pmid_element = article.find(".//PMID")
+            pmid = pmid_element.text if pmid_element is not None else ""
+
+            results.append({
+                "title": title,
+                "abstract": abstract[:500] + '...' if abstract and len(abstract) > 500 else abstract,
+                "pmid": pmid,
+                "url": f"https://pubmed.ncbi.nlm.nih.gov/{pmid}/" if pmid else ""
+            })
+
+        return {"query": query, "num_results": len(results), "results": results}
+
+    except requests.exceptions.RequestException as e:
+        return {"error": f"API request failed: {str(e)}"}
+    except Exception as e:
+        return {"error": f"An unexpected error occurred: {str(e)}"}
+
+def analyze_sequence(sequence: str, sequence_type: str) -> dict:
+    """
+    Analyze DNA, RNA, or protein sequences using Biopython.
+    """
+    try:
+        seq_upper = sequence.upper().strip()
+        bio_seq = Seq(seq_upper)
+        analysis = {
+            "sequence_type": sequence_type,
+            "length": len(bio_seq),
+        }
+
+        if sequence_type == "DNA":
+            analysis["gc_content"] = f"{gc_fraction(bio_seq) * 100:.2f}%"
+            analysis["transcription"] = str(bio_seq.transcribe())
+            analysis["translation"] = str(bio_seq.translate())
+        elif sequence_type == "RNA":
+            analysis["gc_content"] = f"{gc_fraction(bio_seq) * 100:.2f}%"
+            analysis["back_transcription"] = str(bio_seq.back_transcribe())
+            analysis["translation"] = str(bio_seq.translate())
+        elif sequence_type == "protein":
+            # Placeholder for protein-specific analysis
+            analysis["molecular_weight"] = "Not yet implemented."
+        else:
+            return {"error": "Invalid sequence_type. Must be 'DNA', 'RNA', or 'protein'."}
+
+        return analysis
+    except Exception as e:
+        return {"error": f"An error occurred during sequence analysis: {str(e)}"}
+
+def calculate_drug_properties(smiles: str) -> dict:
+    """
+    Calculate molecular properties for a drug compound from its SMILES string using RDKit.
+    """
+    try:
+        mol = Chem.MolFromSmiles(smiles)
+        if mol is None:
+            return {"error": "Invalid SMILES string provided."}
+
+        properties = {
+            "molecular_weight": Descriptors.MolWt(mol),
+            "logp": Descriptors.MolLogP(mol),
+            "hbd": Lipinski.NumHDonors(mol),
+            "hba": Lipinski.NumHAcceptors(mol),
+            "rotatable_bonds": Lipinski.NumRotatableBonds(mol),
+            "tpsa": Descriptors.TPSA(mol),
+        }
+        return properties
+    except Exception as e:
+        return {"error": f"An error occurred during property calculation: {str(e)}"}
+
+# Placeholder for other tools from the config, returning a simple message.
+def simulate_pharmacokinetics(**kwargs) -> dict:
+    return {"status": "This tool is not yet implemented."}
+
+def analyze_medical_image(**kwargs) -> dict:
+    return {"status": "This tool is not yet implemented."}
