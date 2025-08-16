@@ -1,0 +1,113 @@
+/* Black and White Biomedical Theme */
+
+:root {
+  --primary-bg: #000000;
+  --secondary-bg: #1a1a1a;
+  --card-bg: #101010;
+  --primary-text: #ffffff;
+  --secondary-text: #a0a0a0;
+  --accent-color: #ffffff;
+  --accent-hover: #e0e0e0;
+  --border-color: #333333;
+}
+
+/* Base styles */
+body {
+  background-color: var(--primary-bg);
+  color: var(--primary-text);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Card enhancements */
+.card {
+  background-color: var(--secondary-bg) !important;
+  border: 1px solid var(--border-color) !important;
+  border-radius: 25px !important;
+}
+
+.card-header {
+  background-color: var(--primary-bg) !important;
+  border-bottom: 1px solid var(--border-color) !important;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.card-footer {
+  background-color: var(--primary-bg) !important;
+  border-top: 1px solid var(--border-color) !important;
+}
+
+/* Form controls */
+.form-control {
+  background-color: var(--card-bg) !important;
+  color: var(--primary-text) !important;
+  border: 1px solid var(--border-color) !important;
+  border-radius: 25px !important;
+  resize: none !important;
+}
+
+.form-control:focus {
+  background-color: var(--card-bg) !important;
+  color: var(--primary-text) !important;
+  border-color: var(--accent-color) !important;
+  box-shadow: none !important;
+}
+
+/* Buttons */
+.btn-primary {
+  background-color: var(--primary-bg) !important;
+  border: 1px solid var(--accent-color) !important;
+  color: var(--accent-color) !important;
+  border-radius: 25px !important;
+  transition: all 0.3s ease !important;
+}
+
+.btn-primary:hover, .btn-primary:focus, .btn-primary:active {
+  background-color: var(--accent-color) !important;
+  color: var(--primary-bg) !important;
+}
+
+/* Message cards */
+.message-card.user {
+  background-color: var(--primary-bg) !important;
+  color: var(--primary-text) !important;
+  border: 1px solid var(--border-color);
+  max-width: 80%;
+  border-radius: 15px 15px 0 15px;
+}
+
+.message-card.assistant {
+  background-color: var(--secondary-bg) !important;
+  color: var(--primary-text) !important;
+  border: 1px solid var(--border-color);
+  max-width: 80%;
+  border-radius: 15px 15px 15px 0;
+}
+
+/* Heartbeat animation */
+.heartbeat {
+  animation: heartbeat 1.5s infinite;
+}
+
+@keyframes heartbeat {
+  0% {
+    transform: scale(1);
+  }
+  14% {
+    transform: scale(1.1);
+  }
+  28% {
+    transform: scale(1);
+  }
+  42% {
+    transform: scale(1.1);
+  }
+  70% {
+    transform: scale(1);
+  }
+}

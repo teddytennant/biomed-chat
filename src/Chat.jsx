@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Container, Row, Col, Form, Button, Card, Spinner } from 'react-bootstrap';
+import { Container, Row, Col, Form, Button, Card } from 'react-bootstrap';
+import AdvancedBiomedAnimation from './AdvancedBiomedAnimation';
+import BiomedIcon from './BiomedIcon';
 
 const Chat = () => {
   const [messages, setMessages] = useState([]);
@@ -63,54 +65,92 @@ const Chat = () => {
   };
 
   return (
-    <Container fluid="lg" className="d-flex flex-column vh-100 py-3">
-      <Card className="flex-grow-1 d-flex flex-column">
-        <Card.Header as="h5">Biomed Chat</Card.Header>
-        <Card.Body className="flex-grow-1 overflow-auto">
-          {messages.map((msg, index) => (
-            <div key={index} className={`d-flex ${msg.role === 'user' ? 'justify-content-end' : 'justify-content-start'} mb-3`}>
-              <Card body className={msg.role === 'user' ? 'bg-primary text-white' : 'bg-light'}>
-                <div style={{ whiteSpace: 'pre-wrap' }}>{msg.content}</div>
-              </Card>
-            </div>
-          ))}
-          {isLoading && (
-            <div className="d-flex justify-content-start mb-3">
-              <Card body className="bg-light">
-                <Spinner animation="border" size="sm" />
-              </Card>
-            </div>
-          )}
-          <div ref={messagesEndRef} />
-        </Card.Body>
-        <Card.Footer>
-          <Form onSubmit={(e) => { e.preventDefault(); handleSend(); }}>
-            <Row>
-              <Col xs={10}>
-                <Form.Control
-                  as="textarea"
-                  rows={2}
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && !e.shiftKey) {
-                      e.preventDefault();
-                      handleSend();
-                    }
-                  }}
-                  placeholder="Type your message..."
-                  disabled={isLoading}
-                />
-              </Col>
-              <Col xs={2} className="d-grid">
-                <Button variant="primary" type="submit" disabled={isLoading}>
-                  {isLoading ? <Spinner animation="border" size="sm" /> : 'Send'}
-                </Button>
-              </Col>
-            </Row>
-          </Form>
-        </Card.Footer>
-      </Card>
+    <Container fluid className="d-flex flex-column vh-100">
+      {messages.length === 0 ? (
+        <div className="flex-grow-1 d-flex flex-column justify-content-center align-items-center">
+          <AdvancedBiomedAnimation />
+          <div className="w-100 mt-4">
+            <Form onSubmit={(e) => { e.preventDefault(); handleSend(); }}>
+              <Row>
+                <Col xs={10}>
+                  <Form.Control
+                    as="textarea"
+                    rows={1}
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        handleSend();
+                      }
+                    }}
+                    placeholder="Type your message..."
+                    disabled={isLoading}
+                  />
+                </Col>
+                <Col xs={2} className="d-grid">
+                  <Button variant="primary" type="submit" disabled={isLoading}>
+                    Send
+                  </Button>
+                </Col>
+              </Row>
+            </Form>
+          </div>
+        </div>
+      ) : (
+        <Card className="flex-grow-1 d-flex flex-column">
+          <Card.Header as="h5" className="d-flex align-items-center">
+            <BiomedIcon />
+            <span className="ms-2">Biomed Chat</span>
+          </Card.Header>
+          <Card.Body className="flex-grow-1 overflow-auto">
+            {messages.map((msg, index) => (
+              <div key={index} className={`d-flex ${msg.role === 'user' ? 'justify-content-end' : 'justify-content-start'} mb-3`}>
+                <Card body className={`message-card ${msg.role === 'user' ? 'user' : 'assistant'}`}>
+                  <div style={{ whiteSpace: 'pre-wrap' }}>{msg.content}</div>
+                </Card>
+              </div>
+            ))}
+            {isLoading && (
+              <div className="d-flex justify-content-start mb-3">
+                <Card body className="message-card assistant">
+                  <div className="d-flex justify-content-center align-items-center" style={{ height: '40px' }}>
+                    <div className="dot-flashing"></div>
+                  </div>
+                </Card>
+              </div>
+            )}
+            <div ref={messagesEndRef} />
+          </Card.Body>
+          <Card.Footer>
+            <Form onSubmit={(e) => { e.preventDefault(); handleSend(); }}>
+              <Row>
+                <Col xs={10}>
+                  <Form.Control
+                    as="textarea"
+                    rows={1}
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        handleSend();
+                      }
+                    }}
+                    placeholder="Type your message..."
+                    disabled={isLoading}
+                  />
+                </Col>
+                <Col xs={2} className="d-grid">
+                  <Button variant="primary" type="submit" disabled={isLoading}>
+                    Send
+                  </Button>
+                </Col>
+              </Row>
+            </Form>
+          </Card.Footer>
+        </Card>
+      )}
     </Container>
   );
 };
