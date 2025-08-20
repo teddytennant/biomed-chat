@@ -65,32 +65,56 @@ const Chat = () => {
   };
 
   return (
-    <Container fluid className="d-flex flex-column vh-100">
+    <Container fluid className="chat-container">
       {messages.length === 0 ? (
-        <div className="flex-grow-1 d-flex flex-column justify-content-center align-items-center">
-          <AdvancedBiomedAnimation />
-          <div className="w-100 mt-4">
-            <Form onSubmit={(e) => { e.preventDefault(); handleSend(); }}>
-              <Row>
+        <div className="landing-container">
+          <div className="animation-wrapper fade-in">
+            <AdvancedBiomedAnimation />
+          </div>
+          <div className="input-section">
+            <div className="welcome-text text-center mb-4">
+              <h1 className="text-gradient mb-2">Welcome to Biomed Chat</h1>
+              <p className="text-muted">Start a conversation with our AI assistant</p>
+            </div>
+            <Form onSubmit={(e) => { e.preventDefault(); handleSend(); }} className="input-form">
+              <Row className="g-2">
                 <Col xs={10}>
-                  <Form.Control
-                    as="textarea"
-                    rows={1}
-                    value={input}
-                    onChange={(e) => setInput(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' && !e.shiftKey) {
-                        e.preventDefault();
-                        handleSend();
-                      }
-                    }}
-                    placeholder="Type your message..."
-                    disabled={isLoading}
-                  />
+                  <div className="input-wrapper">
+                    <Form.Control
+                      as="textarea"
+                      rows={1}
+                      value={input}
+                      onChange={(e) => setInput(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                          e.preventDefault();
+                          handleSend();
+                        }
+                      }}
+                      placeholder="Ask me anything about biomedical topics..."
+                      disabled={isLoading}
+                      className="modern-input"
+                    />
+                    <div className="input-actions">
+                      <small className="text-muted">Press Enter to send</small>
+                    </div>
+                  </div>
                 </Col>
                 <Col xs={2} className="d-grid">
-                  <Button variant="primary" type="submit" disabled={isLoading}>
-                    Send
+                  <Button
+                    variant="primary"
+                    type="submit"
+                    disabled={isLoading || !input.trim()}
+                    className="send-button"
+                  >
+                    {isLoading ? (
+                      <div className="loading-spinner"></div>
+                    ) : (
+                      <>
+                        <i className="fas fa-paper-plane me-1"></i>
+                        Send
+                      </>
+                    )}
                   </Button>
                 </Col>
               </Row>
@@ -98,58 +122,103 @@ const Chat = () => {
           </div>
         </div>
       ) : (
-        <Card className="flex-grow-1 d-flex flex-column">
-          <Card.Header as="h5" className="d-flex align-items-center">
-            <BiomedIcon />
-            <span className="ms-2">Biomed Chat</span>
-          </Card.Header>
-          <Card.Body className="flex-grow-1 overflow-auto">
+        <div className="chat-active">
+          <div className="chat-header">
+            <div className="d-flex align-items-center">
+              <BiomedIcon />
+              <div className="ms-3">
+                <h5 className="mb-0 text-gradient">Biomed Chat</h5>
+                <small className="text-muted">AI Assistant</small>
+              </div>
+            </div>
+            <div className="chat-stats">
+              <small className="text-muted">{messages.length} messages</small>
+            </div>
+          </div>
+
+          <div className="messages-container">
             {messages.map((msg, index) => (
-              <div key={index} className={`d-flex ${msg.role === 'user' ? 'justify-content-end' : 'justify-content-start'} mb-3`}>
-                <Card body className={`message-card ${msg.role === 'user' ? 'user' : 'assistant'}`}>
-                  <div style={{ whiteSpace: 'pre-wrap' }}>{msg.content}</div>
-                </Card>
+              <div key={index} className={`message-wrapper ${msg.role} slide-in-${msg.role === 'user' ? 'right' : 'left'}`}>
+                <div className={`message-avatar ${msg.role}`}>
+                  {msg.role === 'user' ? (
+                    <i className="fas fa-user"></i>
+                  ) : (
+                    <BiomedIcon />
+                  )}
+                </div>
+                <div className={`message-content ${msg.role}`}>
+                  <div className="message-text">{msg.content}</div>
+                  <div className="message-time">
+                    <small className="text-muted">
+                      {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </small>
+                  </div>
+                </div>
               </div>
             ))}
+
             {isLoading && (
-              <div className="d-flex justify-content-start mb-3">
-                <Card body className="message-card assistant">
-                  <div className="d-flex justify-content-center align-items-center" style={{ height: '40px' }}>
+              <div className="message-wrapper assistant slide-in-left">
+                <div className="message-avatar assistant">
+                  <BiomedIcon />
+                </div>
+                <div className="message-content assistant loading">
+                  <div className="typing-indicator">
                     <div className="dot-flashing"></div>
+                    <div className="typing-text">AI is typing...</div>
                   </div>
-                </Card>
+                </div>
               </div>
             )}
             <div ref={messagesEndRef} />
-          </Card.Body>
-          <Card.Footer>
-            <Form onSubmit={(e) => { e.preventDefault(); handleSend(); }}>
-              <Row>
+          </div>
+
+          <div className="chat-input-container">
+            <Form onSubmit={(e) => { e.preventDefault(); handleSend(); }} className="input-form">
+              <Row className="g-2">
                 <Col xs={10}>
-                  <Form.Control
-                    as="textarea"
-                    rows={1}
-                    value={input}
-                    onChange={(e) => setInput(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' && !e.shiftKey) {
-                        e.preventDefault();
-                        handleSend();
-                      }
-                    }}
-                    placeholder="Type your message..."
-                    disabled={isLoading}
-                  />
+                  <div className="input-wrapper">
+                    <Form.Control
+                      as="textarea"
+                      rows={1}
+                      value={input}
+                      onChange={(e) => setInput(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                          e.preventDefault();
+                          handleSend();
+                        }
+                      }}
+                      placeholder="Continue the conversation..."
+                      disabled={isLoading}
+                      className="modern-input"
+                    />
+                    <div className="input-actions">
+                      <small className="text-muted">Press Enter to send</small>
+                    </div>
+                  </div>
                 </Col>
                 <Col xs={2} className="d-grid">
-                  <Button variant="primary" type="submit" disabled={isLoading}>
-                    Send
+                  <Button
+                    variant="primary"
+                    type="submit"
+                    disabled={isLoading || !input.trim()}
+                    className="send-button"
+                  >
+                    {isLoading ? (
+                      <div className="loading-spinner"></div>
+                    ) : (
+                      <>
+                        <i className="fas fa-paper-plane me-1"></i>
+                        Send
+                      </>
+                    )}
                   </Button>
                 </Col>
               </Row>
             </Form>
-          </Card.Footer>
-        </Card>
+          </div>
+        </div>
       )}
     </Container>
   );
