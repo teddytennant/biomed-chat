@@ -1,0 +1,35 @@
+.settings-container {
+  padding: 2rem;
+  border-radius: 8px;
+  background-color: #f9f9f9;
+  color: #333;
+  transition: background-color 0.3s, color 0.3s;
+}
+
+.settings-container.dark {
+  background-color: #333;
+  color: #f9f9f9;
+}
+
+.setting-item {
+  margin-bottom: 1.5rem;
+}
+
+.setting-item label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: bold;
+}
+
+.setting-item select,
+.setting-item input[type="checkbox"],
+.setting-item input[type="radio"] {
+  margin-right: 0.5rem;
+}
+
+.checkbox-group,
+.radio-group {
+  display: flex;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
