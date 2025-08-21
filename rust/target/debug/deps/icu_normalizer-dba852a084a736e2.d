@@ -1,0 +1,10 @@
+/Users/teddytennant/Desktop/Biomed chat/rust/target/debug/deps/icu_normalizer-dba852a084a736e2.d: /Users/teddytennant/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/icu_normalizer-2.0.0/src/lib.rs /Users/teddytennant/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/icu_normalizer-2.0.0/src/properties.rs /Users/teddytennant/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/icu_normalizer-2.0.0/src/provider.rs /Users/teddytennant/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/icu_normalizer-2.0.0/src/uts46.rs
+
+/Users/teddytennant/Desktop/Biomed chat/rust/target/debug/deps/libicu_normalizer-dba852a084a736e2.rlib: /Users/teddytennant/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/icu_normalizer-2.0.0/src/lib.rs /Users/teddytennant/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/icu_normalizer-2.0.0/src/properties.rs /Users/teddytennant/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/icu_normalizer-2.0.0/src/provider.rs /Users/teddytennant/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/icu_normalizer-2.0.0/src/uts46.rs
+
+/Users/teddytennant/Desktop/Biomed chat/rust/target/debug/deps/libicu_normalizer-dba852a084a736e2.rmeta: /Users/teddytennant/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/icu_normalizer-2.0.0/src/lib.rs /Users/teddytennant/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/icu_normalizer-2.0.0/src/properties.rs /Users/teddytennant/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/icu_normalizer-2.0.0/src/provider.rs /Users/teddytennant/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/icu_normalizer-2.0.0/src/uts46.rs
+
+/Users/teddytennant/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/icu_normalizer-2.0.0/src/lib.rs:
+/Users/teddytennant/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/icu_normalizer-2.0.0/src/properties.rs:
+/Users/teddytennant/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/icu_normalizer-2.0.0/src/provider.rs:
+/Users/teddytennant/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/icu_normalizer-2.0.0/src/uts46.rs:
