@@ -1,13 +1,15 @@
 /* Default Dark Theme */
 :root {
-  --primary-bg: #000000;
+  --primary-bg: #0a0a0a;
   --secondary-bg: #1a1a1a;
-  --card-bg: #101010;
+  --card-bg: #151515;
   --primary-text: #ffffff;
-  --secondary-text: #a0a0a0;
-  --accent-color: #ffffff;
-  --accent-hover: #e0e0e0;
-  --border-color: #333333;
+  --secondary-text: #b0b0b0;
+  --accent-color: #60a5fa;
+  --accent-hover: #3b82f6;
+  --border-color: rgba(255, 255, 255, 0.1);
+  --gradient-start: #667eea;
+  --gradient-end: #764ba2;
 }
 
 /* Light Theme */

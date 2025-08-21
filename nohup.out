@@ -25,3 +25,11 @@ Frontend is served by the Vite dev server. Run `npm run dev:frontend`.
 10:33:07 AM [vite] (client) hmr update /src/theme.css
 10:33:15 AM [vite] (client) hmr update /src/Settings.jsx
 10:33:23 AM [vite] (client) hmr update /src/Settings.css
+
+> biomed-chat@1.0.0 start
+> NODE_ENV=production node server.js
+
+[WARN] SITE_PASSWORD not set. Site is NOT password protected.
+Biomed Chat (Node.js server) listening on http://localhost:3000
+Expecting Python RAG service to be running at http://localhost:8000/api/chat
+Serving production build of the frontend.

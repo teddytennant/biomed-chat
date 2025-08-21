@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Container, Row, Col, Form, Button, Card } from 'react-bootstrap';
 import AdvancedBiomedAnimation from './AdvancedBiomedAnimation';
 import BiomedIcon from './BiomedIcon';
+import './Chat.css';
 
 const Chat = () => {
   const [messages, setMessages] = useState([]);

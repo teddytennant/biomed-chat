@@ -5,6 +5,7 @@ import Settings from './Settings';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './index.css';
 import './theme.css';
+import './App.css';
 
 function Navigation() {
   const location = useLocation();
