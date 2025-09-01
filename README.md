@@ -1,135 +1,171 @@
 # Biomed Chat
 
-🎨 **Modern, Professional UI/UX** | 🤖 **AI-Powered Biomedical Assistant** | 🔬 **Engineer-Focused Design**
+> A cutting-edge AI-powered chatbot interface designed specifically for biomedical engineers with modern UI/UX and professional design.
 
-A cutting-edge chatbot interface designed specifically for biomedical engineers. Features a stunning modern design with glass morphism effects, smooth animations, and an intuitive user experience. Proxies to Grok‑4 via xAI API with RAG and a tailored system prompt that assumes baseline field expertise.
+## Project Overview
+
+Biomed Chat is a specialized chatbot interface tailored for biomedical engineers, featuring a stunning modern design with glass morphism effects, smooth animations, and an intuitive user experience. The application proxies to multiple AI providers including Grok, Gemini, OpenAI, and Anthropic, with RAG capabilities and a tailored system prompt that assumes baseline field expertise.
 
 **Note on API Providers:** This project is built around the Grok API, which has demonstrated high performance on benchmarks. While other providers are supported, Grok is recommended for the best experience.
 
-## ✨ Modern UI/UX Features
+## Features
 
-### 🎨 **Visual Design**
+### 🎨 Modern UI/UX Design
 - **Dynamic Animated Background**: Beautiful gradient background with floating orbs and smooth color transitions
 - **Glass Morphism Effects**: Modern glass-like components with backdrop blur and transparency
 - **Gradient Text Effects**: Eye-catching gradient text for branding and headings
 - **Advanced Animations**: Smooth 60fps animations and micro-interactions throughout
-
-### 🚀 **User Experience**
-- **Intuitive Navigation**: Enhanced navbar with hover effects and active state indicators
-- **Modern Chat Interface**: Glass morphism message bubbles with smooth slide-in animations
-- **Enhanced Settings Page**: Professional settings interface with animated cards and modern controls
 - **Responsive Design**: Optimized for all screen sizes with mobile-first approach
 - **Accessibility**: High contrast support, reduced motion preferences, and keyboard navigation
 
-### 💫 **Interactive Elements**
-- **Hover Animations**: Subtle lift effects and color transitions on interactive elements
-- **Loading States**: Beautiful loading indicators and typing animations
-- **Visual Feedback**: Immediate response to user actions with smooth transitions
+### 🚀 User Experience
+- **Intuitive Navigation**: Enhanced navbar with hover effects and active state indicators
+- **Modern Chat Interface**: Glass morphism message bubbles with smooth slide-in animations
+- **Enhanced Settings Page**: Professional settings interface with animated cards and modern controls
+- **Interactive Elements**: Subtle hover animations, loading states, and visual feedback
 - **Modern Form Controls**: Custom-styled inputs, switches, and buttons with glass effects
 
-## Features
-
-- **Multi-API Support**: Supports Grok, Gemini, OpenAI, and Anthropic APIs.
+### 🤖 AI Capabilities
+- **Multi-API Support**: Supports Grok, Gemini, OpenAI, and Anthropic APIs
 - **Smart API Fallback**: Automatically uses mock responses when API key is not available
 - **Biomedical Focus**: Specialized responses for biomedical engineering topics
-- **Streaming Responses**: Real-time response streaming for better UX
+- **Streaming Responses**: Real-time response streaming for better user experience
 - **Mock Mode**: Realistic demonstration responses when API is unavailable
 
 ## Setup
 
-1. Node.js 18+ required
-2. Install dependencies:
+### Prerequisites
+- Node.js 18 or higher
+- Python 3.8+ (for backend dependencies)
 
-```sh
-npm install
-pip install -r requirements.txt
-```
+### Installation
 
-3. Configure `.env` file:
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/teddytennant/biomed-chat.git
+   cd biomed-chat
+   ```
 
+2. **Install dependencies:**
+   ```bash
+   npm install
+   pip install -r requirements.txt
+   ```
+
+## Configuration
+
+1. **Create environment file:**
+   Create a `.env` file in the root directory with the following configuration:
+
+   ```env
+   # Required: Set the API provider
+   API_PROVIDER="grok"  # Options: "grok", "gemini", "openai", or "anthropic"
+   
+   # Required: API key for your chosen provider (only one needed)
+   GROK_API_KEY="your_grok_api_key_here"
+   # GEMINI_API_KEY="your_gemini_api_key_here"
+   # OPENAI_API_KEY="your_openai_api_key_here"
+   # ANTHROPIC_API_KEY="your_anthropic_api_key_here"
+   
+   # Optional: Additional configuration
+   # XAI_MODEL=grok-4
+   # PORT=3000
+   # SITE_PASSWORD=your_password_here
+   ```
+
+2. **For mock/demo mode:**
+   Comment out or remove the API key to enable mock responses:
+   ```env
+   API_PROVIDER="grok"
+   # GROK_API_KEY="your_grok_api_key_here"  # Commented out for mock mode
+   ```
+
+## Usage
+
+### Starting the Application
+
+1. **Development mode:**
+   ```bash
+   npm run dev
+   ```
+
+2. **Production mode:**
+   ```bash
+   npm run build
+   npm start
+   ```
+
+3. **Open your browser:**
+   Navigate to `http://localhost:3000` to access the application.
+
+### Example Commands
+
+Once the application is running, you can interact with the AI assistant using biomedical engineering queries:
+
+- "Explain the biomechanics of knee joint replacement"
+- "What are the latest developments in neural prosthetics?"
+- "Design considerations for biocompatible materials"
+- "How do cardiac pacemakers regulate heart rhythm?"
+
+## API Providers
+
+The application supports multiple AI providers with easy switching:
+
+### Supported Providers
+- **Grok (xAI)** - Recommended for best performance
+- **Gemini (Google)** - Good for technical discussions
+- **OpenAI** - Reliable general-purpose AI
+- **Anthropic (Claude)** - Strong reasoning capabilities
+
+### Provider Configuration
+Set your preferred provider in the `.env` file:
 ```env
-# Set the API provider
-API_PROVIDER="grok"  # "grok", "gemini", "openai", or "anthropic"
-
-# For full AI functionality (only one is required based on the provider):
-GROK_API_KEY="your_grok_api_key_here"
-GEMINI_API_KEY="your_gemini_api_key_here"
-OPENAI_API_KEY="your_openai_api_key_here"
-ANTHROPIC_API_KEY="your_anthropic_api_key_here"
-
-# For mock/demo mode, comment out the API key:
-# GROK_API_KEY="your_grok_api_key_here"
-
-# Optional overrides:
-# XAI_MODEL=grok-4
-# PORT=3000
-# SITE_PASSWORD=your_password_here
+API_PROVIDER="grok"  # Change to your preferred provider
 ```
 
-## Run
+Only the API key for your chosen provider is required.
 
-```sh
-npm run dev
-```
+## Mock Mode
 
-Open `http://localhost:3000`.
+When no API key is configured for the selected provider, the system automatically provides realistic mock responses for demonstration purposes. This allows you to:
 
-## Mock Response System
+- Test the user interface without API costs
+- Demonstrate functionality to stakeholders
+- Develop and debug without external dependencies
+- Experience the full application flow
 
-When the corresponding API key for the selected provider is not set, the system automatically provides mock responses for:
+Mock responses are specifically tailored to biomedical engineering topics and maintain the same format as real AI responses.
 
-- **ECG/EKG Analysis**: Signal processing, QRS detection, rhythm analysis
-- **Bioimpedance**: Measurement techniques, safety considerations
-- **FDA Regulatory**: 510(k) submission process, requirements
-- **MRI Safety**: Magnetic field considerations, device testing
-- **General Topics**: Fallback responses explaining mock mode
+## Contributing
 
-Mock responses include realistic biomedical engineering content with proper formatting, references, and streaming behavior identical to the real API.
+We welcome contributions to improve Biomed Chat! Here's how to get started:
 
-## API Modes
+### Development Setup
+1. Fork the repository
+2. Create a feature branch: `git checkout -b feature/your-feature-name`
+3. Make your changes and test thoroughly
+4. Commit your changes: `git commit -m 'Add some feature'`
+5. Push to the branch: `git push origin feature/your-feature-name`
+6. Submit a pull request
 
-**Production Mode** (API key configured):
-- Uses the selected API provider for dynamic responses
-- Falls back to mocks if API fails
+### Guidelines
+- Follow the existing code style and conventions
+- Add tests for new features
+- Update documentation as needed
+- Ensure responsive design principles are maintained
+- Test across different browsers and devices
 
-**Demo/Mock Mode** (no API key):
-- Uses predefined responses for common topics
-- Perfect for demonstrations and development
-- No API costs or rate limits
+### Reporting Issues
+Please use the GitHub Issues tab to report bugs or request features. Include:
+- Clear description of the issue
+- Steps to reproduce
+- Expected vs actual behavior
+- Screenshots if applicable
 
-## Notes
-- System prompt emphasizes concise, actionable outputs with regulatory and validation hooks (IEC 60601, ISO 14971, FDA QSR) and avoids overexplaining fundamentals.
-- Streaming responses for low-latency UI.
-- Shift+Enter inserts newline. 
-- Mock responses maintain the same format and quality as AI responses.
+## License
 
-## 🚀 **Rust Performance Enhancements**
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-High-performance Rust implementations for biomedical signal processing and analysis:
+---
 
-### **Biomedical Signal Processing Library**
-- **Real-time Signal Processing**: Moving average filtering, peak detection, and statistical analysis
-- **ECG Analysis**: Heart rate calculation and rhythm analysis with high accuracy
-- **Command Line Tools**: CLI interface for signal generation, processing, and analysis
-- **Performance**: 10-100x faster than equivalent Python implementations
-
-### **Key Features**
-- **Memory Safety**: Rust's ownership system prevents memory-related bugs
-- **Zero-Cost Abstractions**: High-level APIs with low-level performance
-- **Concurrency**: Safe concurrent processing for real-time applications
-- **Integration Ready**: Can be compiled to WebAssembly or used as Node.js addons
-
-### **Usage**
-```bash
-cd rust
-cargo build
-./target/debug/biomed-chat-rust analyze 0.1 0.8 1.0 0.3  # ECG analysis
-./target/debug/biomed-chat-rust generate 1.0 2.0 1000   # Signal generation
-```
-
-See [`rust/README.md`](rust/README.md) for detailed documentation.
-
-## Coming soon:
-- Fine tuned model for verifying outputs from Grok 4
-- WebAssembly integration for browser-based signal processing
-- Advanced ML models for biomedical pattern recognition
+**Built with ❤️ for the biomedical engineering community**
