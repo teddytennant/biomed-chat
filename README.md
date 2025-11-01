@@ -1,3 +1,4 @@
+# Fine tuned model is here! Available at https://huggingface.co/ttennant/qwen2.5-7b-medical-lora. Integration into UI coming soon.
 # Biomed Chat
 
 Practitioner-focused chatbot UI for biomedical engineers. Proxies to Grok‑4 via xAI API with RAG and a tailored system prompt that assumes baseline field expertise.
