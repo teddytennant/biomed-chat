@@ -117,6 +117,8 @@
     .btn { background: #2f6feb; color: white; border: none; padding: 10px 12px; border-radius: 8px; cursor: pointer; }
     .btn.secondary { background: #26324a; }
     .note { color: #8b97ad; font-size: 12px; margin-top: 8px; }
+    .local-model-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+    .local-model-status { color: #8b97ad; font-size: 12px; }
   </style>
 </head>
 <body>
@@ -180,7 +182,16 @@
           <option value="grok-4">Advanced</option>
           <option value="grok-3">Mid</option>
           <option value="grok-3-mini">Small</option>
+          <option value="local-qwen-medical">Local Medical (Qwen 2.5 7B)</option>
         </select>
+      </div>
+      <div class="field">
+        <label>Local Qwen Model</label>
+        <div class="local-model-row">
+          <span id="local-model-status" class="local-model-status">Checking status...</span>
+          <button id="download-local-model" class="btn secondary" type="button">Download</button>
+        </div>
+  <p class="note">Downloads ~8&nbsp;GB of adapters. Falls back to CPU if no CUDA GPU is detected (much slower, includes an additional ~14&nbsp;GB download).</p>
       </div>
       <div class="row-actions">
         <button id="close-settings" class="btn secondary">Close</button>

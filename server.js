@@ -4,6 +4,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
 import { createHmac } from 'crypto';
+import { spawn } from 'child_process';
 import fetch from 'node-fetch'; // Using node-fetch to call the Python API
 
 const __filename = fileURLToPath(import.meta.url);
@@ -135,7 +136,53 @@ app.use(requireSitePassword);
 app.use(express.static(path.join(__dirname, 'public')));
 
 // --- New /api/chat using Python RAG service ---
-const PYTHON_API_URL = `http://localhost:${process.env.PYTHON_API_PORT || 8000}/api/chat`;
+const pythonApiPort = process.env.PYTHON_API_PORT || 8000;
+const PYTHON_API_BASE = `http://localhost:${pythonApiPort}/api`;
+const PYTHON_CHAT_URL = `${PYTHON_API_BASE}/chat`;
+const PYTHON_LOCAL_MODEL_STATUS_URL = `${PYTHON_API_BASE}/models/local/status`;
+const PYTHON_LOCAL_MODEL_DOWNLOAD_URL = `${PYTHON_API_BASE}/models/local/download`;
+
+let pythonServiceProcess = null;
+const shouldAutostartPython = process.env.DISABLE_PYTHON_AUTOSTART !== '1';
+if (shouldAutostartPython) {
+  const pythonCommand = process.env.PYTHON_BIN || 'python3';
+  const host = process.env.PYTHON_HOST || '0.0.0.0';
+  const entry = process.env.PYTHON_ENTRY || 'api_service:app';
+  const argsFromEnv = process.env.PYTHON_ARGS
+    ? process.env.PYTHON_ARGS.match(/(?:"([^"]+)"|'([^']+)'|\S+)/g)?.map(part => part.replace(/^['"]|['"]$/g, ''))
+    : null;
+
+  const finalArgs = argsFromEnv || [
+    '-m',
+    'uvicorn',
+    entry,
+    '--host',
+    host,
+    '--port',
+    String(pythonApiPort),
+  ];
+
+  try {
+    pythonServiceProcess = spawn(pythonCommand, finalArgs, {
+      stdio: 'inherit',
+      env: process.env,
+    });
+
+    pythonServiceProcess.on('exit', (code, signal) => {
+      if (code !== null && code !== 0) {
+        console.error(
+          `[ERROR] Embedded Python service exited with code ${code}.` +
+          ' Set DISABLE_PYTHON_AUTOSTART=1 to disable auto-spawn.'
+        );
+      } else if (signal) {
+        console.log(`[INFO] Embedded Python service stopped with signal ${signal}`);
+      }
+    });
+  } catch (err) {
+    console.error('[ERROR] Failed to start embedded Python service:', err.message);
+    pythonServiceProcess = null;
+  }
+}
 
 app.post('/api/chat', async (req, res) => {
   console.log('[INFO] Received chat request. Relaying to Python RAG service...');
@@ -146,20 +193,20 @@ app.post('/api/chat', async (req, res) => {
   });
 
   try {
-    const { messages } = req.body || {};
+    const { messages, model } = req.body || {};
     if (!Array.isArray(messages) || messages.length === 0) {
       return res.status(400).json({ error: 'messages must be a non-empty array' });
     }
 
     const userQuery = messages[messages.length - 1].content;
 
-    const pythonServiceResponse = await fetch(PYTHON_API_URL, {
+    const pythonServiceResponse = await fetch(PYTHON_CHAT_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
       },
-      body: JSON.stringify({ query: userQuery }),
+      body: JSON.stringify({ query: userQuery, model }),
     });
 
     if (!pythonServiceResponse.ok) {
@@ -212,6 +259,43 @@ app.post('/api/chat', async (req, res) => {
   }
 });
 
+app.get('/api/models/local/status', async (_req, res) => {
+  try {
+    const upstream = await fetch(PYTHON_LOCAL_MODEL_STATUS_URL, {
+      headers: { 'Accept': 'application/json' },
+    });
+    if (!upstream.ok) {
+      const fallback = await upstream.text();
+      console.error('[ERROR] Python service responded with non-200 for status:', fallback);
+      return res.status(503).json({ state: 'error', error: 'Unable to query local model status.' });
+    }
+    const data = await upstream.json();
+    res.json(data);
+  } catch (err) {
+    console.error('[ERROR] Failed to reach Python service for status:', err.message);
+    res.status(503).json({ state: 'error', error: 'Local model status unavailable.' });
+  }
+});
+
+app.post('/api/models/local/download', async (_req, res) => {
+  try {
+    const upstream = await fetch(PYTHON_LOCAL_MODEL_DOWNLOAD_URL, {
+      method: 'POST',
+      headers: { 'Accept': 'application/json' },
+    });
+    if (!upstream.ok) {
+      const fallback = await upstream.text();
+      console.error('[ERROR] Python service refused download request:', fallback);
+      return res.status(503).json({ state: 'error', error: 'Failed to start local model download.' });
+    }
+    const data = await upstream.json();
+    res.json(data);
+  } catch (err) {
+    console.error('[ERROR] Could not forward download request:', err.message);
+    res.status(503).json({ state: 'error', error: 'Local model download endpoint unreachable.' });
+  }
+});
+
 app.get('/health', (_req, res) => {
   res.json({ ok: true });
 });
@@ -219,7 +303,24 @@ app.get('/health', (_req, res) => {
 const port = process.env.PORT || 3000;
 app.listen(port, () => {
   console.log(`Biomed Chat (Node.js server) listening on http://localhost:${port}`);
-  console.log(`Expecting Python RAG service to be running at ${PYTHON_API_URL}`);
+  console.log(`Expecting Python RAG service to be running at ${PYTHON_CHAT_URL}`);
+});
+
+const stopPythonService = () => {
+  if (pythonServiceProcess) {
+    pythonServiceProcess.kill('SIGINT');
+    pythonServiceProcess = null;
+  }
+};
+
+process.on('exit', stopPythonService);
+process.on('SIGINT', () => {
+  stopPythonService();
+  process.exit(0);
+});
+process.on('SIGTERM', () => {
+  stopPythonService();
+  process.exit(0);
 });
 
 export default app;

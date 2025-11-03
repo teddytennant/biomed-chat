@@ -170,7 +170,7 @@ RAG_MODEL = "all-MiniLM-L6-v2"  # Embedding model for RAG
 
 # File paths
 RAG_INDEX_PATH = "rag_index.faiss"
-RAG_DOCUMENTS_PATH = "documents.txt"
+RAG_DOCUMENTS_PATH = "documents.jsonl"
 
 # Session Configuration
 MAX_CONVERSATION_LENGTH = 50  # Maximum number of messages to keep in context

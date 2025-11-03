@@ -4,6 +4,14 @@ const sendBtn = document.getElementById('send');
 const stopBtn = document.getElementById('stop');
 const modelSelectEl = document.getElementById('model-select');
 const taResizerEl = document.getElementById('ta-resizer');
+const downloadLocalModelBtn = document.getElementById('download-local-model');
+const localModelStatusEl = document.getElementById('local-model-status');
+const localModelOptionEl = modelSelectEl
+  ? modelSelectEl.querySelector('option[value="local-qwen-medical"]')
+  : null;
+
+let localModelState = 'unknown';
+let localModelPollHandle = null;
 
 /** @type {{ role: 'user'|'assistant'|'system', content: string }[]} */
 let conversation = [];
@@ -31,6 +39,94 @@ function appendBubble(role, content, { asHtml = false } = {}) {
 
 function sanitizeUserInput(text) {
   return text.replace(/\s+$/g, '').trim();
+}
+
+function clearLocalModelPoll() {
+  if (localModelPollHandle) {
+    clearTimeout(localModelPollHandle);
+    localModelPollHandle = null;
+  }
+}
+
+function scheduleLocalModelPoll() {
+  clearLocalModelPoll();
+  localModelPollHandle = setTimeout(() => {
+    fetchLocalModelStatus({ showErrors: false });
+  }, 3000);
+}
+
+function applyLocalModelStatusUI(status) {
+  if (!localModelStatusEl || !downloadLocalModelBtn) return;
+
+  clearLocalModelPoll();
+
+  const state = status?.state || 'error';
+  localModelState = state;
+  const detail = status?.detail || null;
+  const device = status?.device || null;
+
+  if (localModelOptionEl) {
+    localModelOptionEl.disabled = state !== 'ready';
+  }
+
+  if (state !== 'ready' && modelSelectEl && modelSelectEl.value === 'local-qwen-medical') {
+    modelSelectEl.value = 'grok-4';
+    localStorage.setItem('selected_model', 'grok-4');
+  }
+
+  switch (state) {
+    case 'ready':
+      localModelStatusEl.textContent = detail
+        ? detail
+        : device === 'cpu'
+          ? 'Ready. Running on CPU (slow).'
+          : 'Ready to use';
+      downloadLocalModelBtn.textContent = device === 'cpu' ? 'Ready (CPU)' : 'Ready';
+      downloadLocalModelBtn.disabled = true;
+      break;
+    case 'downloading':
+    case 'loading':
+      localModelStatusEl.textContent = detail || 'Preparing model... This can take several minutes.';
+      downloadLocalModelBtn.textContent = 'Preparing...';
+      downloadLocalModelBtn.disabled = true;
+      scheduleLocalModelPoll();
+      break;
+    case 'error':
+      if (status?.error) {
+        localModelStatusEl.textContent = `Error: ${status.error}`;
+      } else if (detail) {
+        localModelStatusEl.textContent = detail;
+      } else {
+        localModelStatusEl.textContent = 'Error preparing local model.';
+      }
+      downloadLocalModelBtn.textContent = 'Retry';
+      downloadLocalModelBtn.disabled = false;
+      break;
+    default:
+      localModelStatusEl.textContent = 'Not downloaded';
+      downloadLocalModelBtn.textContent = 'Download';
+      downloadLocalModelBtn.disabled = false;
+      break;
+  }
+}
+
+async function fetchLocalModelStatus({ showErrors = true } = {}) {
+  if (!localModelStatusEl || !downloadLocalModelBtn) return;
+  try {
+    const resp = await fetch('/api/models/local/status');
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const data = await resp.json();
+    applyLocalModelStatusUI(data);
+  } catch (err) {
+    localModelState = 'error';
+    if (showErrors) {
+      localModelStatusEl.textContent = 'Status unavailable';
+    }
+    downloadLocalModelBtn.textContent = 'Retry';
+    downloadLocalModelBtn.disabled = false;
+    if (localModelOptionEl) localModelOptionEl.disabled = true;
+    console.error('[Local model status] failed', err);
+  }
 }
 
 // Minimal markdown renderer for headings, bullets, code fences and inline code
@@ -113,6 +209,15 @@ async function sendMessage() {
   const text = sanitizeUserInput(inputEl.value);
   if (!text) return;
 
+  const selectedModel = modelSelectEl.value;
+  if (selectedModel === 'local-qwen-medical' && localModelState !== 'ready') {
+    appendBubble(
+      'assistant',
+      'Local model is not ready yet. Open Settings to finish the download before using it.'
+    );
+    return;
+  }
+
   inputEl.value = '';
   appendBubble('user', text);
   conversation.push({ role: 'user', content: text });
@@ -134,7 +239,6 @@ async function sendMessage() {
   inputEl.disabled = true;
 
   try {
-    const selectedModel = modelSelectEl.value;
     const resp = await fetch('/api/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -228,6 +332,31 @@ if (savedModel) {
 modelSelectEl.addEventListener('change', () => {
   localStorage.setItem('selected_model', modelSelectEl.value);
 });
+
+if (downloadLocalModelBtn && localModelStatusEl) {
+  downloadLocalModelBtn.addEventListener('click', async () => {
+    downloadLocalModelBtn.disabled = true;
+    downloadLocalModelBtn.textContent = 'Starting...';
+    localModelStatusEl.textContent = 'Starting download...';
+
+    try {
+      const resp = await fetch('/api/models/local/download', { method: 'POST' });
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      const data = await resp.json();
+      applyLocalModelStatusUI(data);
+    } catch (err) {
+      localModelState = 'error';
+      localModelStatusEl.textContent = 'Failed to start download';
+      downloadLocalModelBtn.textContent = 'Retry';
+      downloadLocalModelBtn.disabled = false;
+      console.error('[Local model download] failed', err);
+    }
+  });
+
+  fetchLocalModelStatus();
+} else {
+  localModelState = 'unsupported';
+}
 
 messagesEl.addEventListener('click', (e) => {
   if (e.target.classList.contains('copy-btn')) {

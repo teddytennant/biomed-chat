@@ -26,3 +26,8 @@ pnpm-debug.log*
 # Build outputs
 build/
 dist/ 
+
+# Local artifacts
+models/
+rag_index.faiss
+documents.jsonl

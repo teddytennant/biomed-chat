@@ -11,6 +11,11 @@ import tools  # Import your tools module
 from mock_responses import MockResponseGenerator, MockToolExecutor
 from rag import add_to_rag, retrieve_from_rag, save_rag_index
 
+try:
+    import local_model
+except ImportError:  # pragma: no cover - Optional dependency path
+    local_model = None
+
 # Determine API provider and initialize client
 API_PROVIDER = config.API_PROVIDER.lower()
 
@@ -78,7 +83,7 @@ else:
             mock_tools = MockToolExecutor()
 
 
-def process_grok_query(user_query, rag_context):
+def process_grok_query(user_query, rag_context, model_name="grok-4"):
     """Process query using Grok API."""
     augmented_query = (
         f"{user_query}\n\nRetrieved Context:\n{rag_context}" if rag_context else user_query
@@ -91,7 +96,7 @@ def process_grok_query(user_query, rag_context):
 
     try:
         response = grok_client.chat.completions.create(
-            model="grok-4",
+            model=model_name or "grok-4",
             messages=messages,
             tools=config.TOOL_DEFINITIONS,
             tool_choice="auto",
@@ -121,7 +126,7 @@ def process_grok_query(user_query, rag_context):
                 )
 
             response = grok_client.chat.completions.create(
-                model="grok-4",
+                model=model_name or "grok-4",
                 messages=messages,
                 tools=config.TOOL_DEFINITIONS,
                 tool_choice="auto",
@@ -226,18 +231,45 @@ def process_anthropic_query(user_query, rag_context):
         return f"⚠️ **API Error - Using Demo Mode**\n\n{mock_generator.get_response(user_query)}"
 
 
-def process_query(user_query):
+def process_local_query(user_query, rag_context):
+    """Process query with the locally hosted fine-tuned Qwen model."""
+    if local_model is None:
+        return (
+            "Local model support is not installed. Install PyTorch (CPU or CUDA), "
+            "transformers, peft, and the optional GPU extras listed in requirements.txt, "
+            "then restart the backend."
+        )
+    try:
+        return local_model.generate_response(user_query, rag_context)
+    except RuntimeError:
+        status = local_model.get_status()
+        state = status.get("state")
+        if state in {"downloading", "loading"}:
+            detail = status.get("detail") or "Preparing local model."
+            return (
+                f"{detail} Current state: {state}. Try again once the status reports ready."
+            )
+        error_detail = status.get("error") or "The local model is not ready yet."
+        return f"⚠️ {error_detail}"
+
+
+def process_query(user_query, model=None):
     """
     Process user query with RAG, tool calling, and provider routing.
     """
     rag_context = retrieve_from_rag(user_query)
+
+    if model == "local-qwen-medical":
+        response = process_local_query(user_query, rag_context)
+        save_rag_index()
+        return response
 
     if USE_MOCK_MODE:
         # Mock mode logic remains the same
         return mock_generator.get_response(user_query)
 
     if API_PROVIDER == "grok":
-        response = process_grok_query(user_query, rag_context)
+        response = process_grok_query(user_query, rag_context, model_name=model)
     elif API_PROVIDER == "gemini":
         response = process_gemini_query(user_query, rag_context)
     elif API_PROVIDER == "openai":

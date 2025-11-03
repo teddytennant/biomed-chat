@@ -1,4 +1,4 @@
-# Fine tuned model is here! Available at https://huggingface.co/ttennant/qwen2.5-7b-medical-lora. Integration into UI coming soon.
+# Fine tuned model is here! Available at https://huggingface.co/ttennant/qwen2.5-7b-medical-lora. Now integrated in the UI with optional local inference.
 # Biomed Chat
 
 Practitioner-focused chatbot UI for biomedical engineers. Proxies to Grok‑4 via xAI API with RAG and a tailored system prompt that assumes baseline field expertise.
@@ -16,7 +16,8 @@ Practitioner-focused chatbot UI for biomedical engineers. Proxies to Grok‑4 vi
 ## Setup
 
 1. Node.js 18+ required
-2. Install dependencies:
+2. Python 3.10+ (CUDA-capable GPU recommended for fast local inference; CPU fallback is supported but much slower)
+3. Install dependencies:
 
 ```sh
 npm install
@@ -50,7 +51,15 @@ ANTHROPIC_API_KEY="your_anthropic_api_key_here"
 npm run dev
 ```
 
-Open `http://localhost:3000`.
+The Node server automatically spawns the Python FastAPI backend (override with `DISABLE_PYTHON_AUTOSTART=1` if you prefer to manage it manually). Open `http://localhost:3000`.
+
+### Using the local Qwen 2.5 7B model
+
+1. If you have a CUDA GPU (recommended), install the GPU extras (PyTorch, bitsandbytes, Unsloth). The `requirements.txt` file pins the Linux CUDA builds; on macOS/Windows follow the official PyTorch install guide first.
+2. From the UI, open **Settings** and press **Download** under **Local Qwen Model**. The status banner will track stages (downloading, loading, ready) and indicate whether GPU or CPU execution is active. GPU loads require ~8&nbsp;GB; CPU fallback additionally downloads the Qwen 2.5 7B base (~14&nbsp;GB) and is significantly slower.
+3. Once ready, pick **Local Medical (Qwen 2.5 7B)** in the model dropdown and chat as normal. Requests will be served locally through the Python service.
+4. If the Python backend restarts and the sentinel file exists, the model will reload automatically on first status check.
+5. To force CPU mode (for systems without CUDA), install PyTorch CPU wheels plus `transformers` and `peft`, then press **Download**. Expect multi-minute responses; consider lowering prompt length for better latency.
 
 ## Mock Response System
 
@@ -82,4 +91,5 @@ Mock responses include realistic biomedical engineering content with proper form
 - Mock responses maintain the same format and quality as AI responses.
 
 ## Coming soon:
-- Fine tuned model for verifying outputs from Grok 4
+- Progress UI for download size and throughput
+- Optional CPU-only distilled model path for lower-end hardware

@@ -120,7 +120,7 @@ The Python implementation includes these specialized tools:
 
 The system saves its knowledge base:
 - **Vector Index**: `rag_index.faiss`
-- **Documents**: `documents.txt`
+- **Documents**: `documents.jsonl`
 
 Load existing knowledge on startup:
 ```python
