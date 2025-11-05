@@ -15,35 +15,105 @@ Practitioner-focused chatbot UI for biomedical engineers. Proxies to Grok‑4 vi
 
 ## Setup
 
-1. Node.js 18+ required
-2. Python 3.10+ (CUDA-capable GPU recommended for fast local inference; CPU fallback is supported but much slower)
-3. Install dependencies:
+### Prerequisites
 
-```sh
+- **Node.js 18+** (required for the web interface)
+- **Python 3.10+** (required for AI inference and RAG)
+- **CUDA-capable GPU** (recommended for fast local model inference; CPU fallback available)
+- **Git** (for cloning the repository)
+
+**💡 Pro tip:** Use the automated `./setup.sh` script for the easiest installation experience.
+
+### Quick Start (Recommended)
+
+1. **Clone and run the automated setup:**
+   ```bash
+   git clone <repository-url>
+   cd biomed-chat
+   ./setup.sh
+   ```
+
+   The setup script will:
+   - Check all prerequisites
+   - Install Node.js and Python dependencies
+   - Detect GPU availability
+   - Create a `.env` template
+   - Provide next steps
+
+2. **Configure environment** (if not done automatically):
+   ```bash
+   # Edit .env with your API keys
+   nano .env  # or your preferred editor
+   ```
+
+3. **Start the application:**
+   ```bash
+   npm run dev
+   ```
+   Open `http://localhost:3000` in your browser.
+
+### Manual Setup (Alternative)
+
+If you prefer manual installation or the automated script fails:
+
+### Detailed Installation
+
+#### Node.js Dependencies (Required)
+```bash
 npm install
+```
+This installs the web server and UI dependencies.
+
+#### Python Dependencies
+
+**Core Dependencies (Required):**
+```bash
 pip install -r requirements.txt
 ```
 
-3. Configure `.env` file:
+**GPU Support (Recommended for Local Model):**
+If you have a CUDA-compatible GPU, the requirements.txt will automatically install GPU-optimized versions on Linux. For other platforms:
+
+- **macOS/Windows:** Install PyTorch first, then the other dependencies:
+  ```bash
+  pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121  # For CUDA 12.1
+  pip install accelerate bitsandbytes unsloth
+  ```
+
+**CPU-Only Mode:**
+If you don't have a GPU or prefer CPU-only operation:
+```bash
+# Install CPU versions (skip GPU packages)
+pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
+pip install transformers peft accelerate
+```
+
+#### Optional Biomedical Tools
+For advanced biomedical analysis features:
+```bash
+pip install biopython rdkit SimpleITK pydicom scipy pandas matplotlib plotly
+```
+
+### Configuration
+
+Create a `.env` file in the project root:
 
 ```env
-# Set the API provider
-API_PROVIDER="grok"  # "grok", "gemini", "openai", or "anthropic"
+# Choose your AI provider (grok recommended)
+API_PROVIDER="grok"
 
-# For full AI functionality (only one is required based on the provider):
+# API Keys (only one required based on provider)
 GROK_API_KEY="your_grok_api_key_here"
 GEMINI_API_KEY="your_gemini_api_key_here"
 OPENAI_API_KEY="your_openai_api_key_here"
 ANTHROPIC_API_KEY="your_anthropic_api_key_here"
 
-# For mock/demo mode, comment out the API key:
-# GROK_API_KEY="your_grok_api_key_here"
-
-# Optional overrides:
-# XAI_MODEL=grok-4
-# PORT=3000
-# SITE_PASSWORD=your_password_here
+# Optional settings
+PORT=3000
+SITE_PASSWORD="your_password_here"  # For protected access
 ```
+
+**For demo/mock mode:** Comment out or remove the API key to use predefined responses without API costs.
 
 ## Run
 
@@ -53,13 +123,68 @@ npm run dev
 
 The Node server automatically spawns the Python FastAPI backend (override with `DISABLE_PYTHON_AUTOSTART=1` if you prefer to manage it manually). Open `http://localhost:3000`.
 
-### Using the local Qwen 2.5 7B model
+### Using the Local Qwen 2.5 7B Model
 
-1. If you have a CUDA GPU (recommended), install the GPU extras (PyTorch, bitsandbytes, Unsloth). The `requirements.txt` file pins the Linux CUDA builds; on macOS/Windows follow the official PyTorch install guide first.
-2. From the UI, open **Settings** and press **Download** under **Local Qwen Model**. The status banner will track stages (downloading, loading, ready) and indicate whether GPU or CPU execution is active. GPU loads require ~8&nbsp;GB; CPU fallback additionally downloads the Qwen 2.5 7B base (~14&nbsp;GB) and is significantly slower.
-3. Once ready, pick **Local Medical (Qwen 2.5 7B)** in the model dropdown and chat as normal. Requests will be served locally through the Python service.
-4. If the Python backend restarts and the sentinel file exists, the model will reload automatically on first status check.
-5. To force CPU mode (for systems without CUDA), install PyTorch CPU wheels plus `transformers` and `peft`, then press **Download**. Expect multi-minute responses; consider lowering prompt length for better latency.
+The app includes an optional local AI model for privacy and offline use. This requires additional setup but provides fast, private inference.
+
+#### Quick Setup:
+1. **Ensure GPU dependencies are installed** (see Python Dependencies section above)
+2. **In the web UI, go to Settings → Local Qwen Model → Download**
+3. **Wait for download and loading** (shows progress in status banner)
+4. **Select "Local Medical (Qwen 2.5 7B)"** in the model dropdown
+
+#### System Requirements:
+- **GPU Mode:** ~8GB VRAM, ~8GB download (fast inference, recommended)
+- **CPU Mode:** ~16GB RAM, ~22GB download (slow but works without GPU)
+
+#### Important Notes:
+- **Unsloth requires GPU:** If you don't have a CUDA GPU, the system automatically falls back to CPU mode using transformers + PEFT
+- **Large downloads:** Both GPU and CPU modes require downloading large model files
+- **First-time setup:** The base Qwen 2.5 7B model (~14GB) is downloaded, then the medical LoRA adapter (~8GB) is applied
+
+#### Troubleshooting Local Model:
+- **"PyTorch not found":** Install PyTorch (see Python Dependencies)
+- **"CUDA not available":** Falls back to CPU mode automatically
+- **Slow responses:** Use GPU mode or reduce prompt length
+- **Download fails:** Check internet connection and disk space
+- **Model won't load:** Clear browser cache and restart the app
+
+### Troubleshooting
+
+#### Common Issues:
+
+**"Module not found" errors:**
+```bash
+# Reinstall dependencies
+npm install
+pip install -r requirements.txt --force-reinstall
+```
+
+**Port already in use:**
+```bash
+# Change port in .env or kill process
+lsof -ti:3000 | xargs kill -9
+```
+
+**GPU not detected:**
+- Ensure CUDA drivers are installed
+- Check `nvidia-smi` command works
+- Verify PyTorch CUDA installation: `python -c "import torch; print(torch.cuda.is_available())"`
+
+**Unsloth GPU requirement:**
+- If you see import errors related to Unsloth, don't worry - CPU mode will be used automatically
+- CPU mode uses standard transformers + PEFT instead of Unsloth
+- CPU mode is slower but works on any system with PyTorch
+
+**API rate limits:**
+- Switch to mock mode by removing API keys
+- Wait for rate limit reset
+- Consider upgrading API plan
+
+**Slow local model:**
+- Use GPU if available
+- Reduce conversation history
+- Consider CPU-optimized model (coming soon)
 
 ## Mock Response System
 

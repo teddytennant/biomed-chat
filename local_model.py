@@ -19,7 +19,7 @@ except ImportError:  # pragma: no cover - optional dependency for local inferenc
 
 try:
     from unsloth import FastLanguageModel
-except ImportError:  # pragma: no cover - optional dependency for local inference
+except (ImportError, NotImplementedError):  # pragma: no cover - optional dependency for local inference
     FastLanguageModel = None
 
 import config
