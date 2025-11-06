@@ -104,21 +104,26 @@
     a.minilink:hover { color: #fff; border-bottom-color: #fff; }
 
     /* Settings modal */
-    .settings-btn { background: transparent; color: var(--muted); border: 1px solid var(--soft-border); border-radius: 8px; padding: 6px 10px; cursor: pointer; }
-    .settings-btn:hover { color: #fff; border-color: #fff; }
-    .modal { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; background: rgba(0,0,0,0.6); }
+    .settings-btn { background: transparent; color: var(--muted); border: 1px solid var(--soft-border); border-radius: 8px; padding: 6px 10px; cursor: pointer; transition: all 0.2s ease; }
+    .settings-btn:hover { color: #fff; border-color: #fff; background: rgba(255,255,255,0.05); }
+    .modal { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; background: rgba(0,0,0,0.6); z-index: 1000; }
     .modal.open { display: flex; }
-    .modal-card { background: #121826; border: 1px solid #222b45; padding: 20px; border-radius: 12px; width: 92%; max-width: 520px; }
-    .modal h2 { margin: 0 0 12px; font-size: 18px; }
-    .field { margin: 10px 0; }
-    .field label { display: block; font-size: 12px; color: #a0acc0; margin-bottom: 6px; }
-    .field input { width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid #2a3553; background: #0b1220; color: #e6eaf2; outline: none; }
-    .row-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 12px; }
-    .btn { background: #2f6feb; color: white; border: none; padding: 10px 12px; border-radius: 8px; cursor: pointer; }
-    .btn.secondary { background: #26324a; }
-    .note { color: #8b97ad; font-size: 12px; margin-top: 8px; }
-    .local-model-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-    .local-model-status { color: #8b97ad; font-size: 12px; }
+    .modal-card { background: var(--panel); border: 1px solid var(--border); padding: 24px; border-radius: 12px; width: 92%; max-width: 480px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+    .modal h2 { margin: 0 0 20px; font-size: 20px; font-weight: 600; color: var(--text); }
+    .field { margin: 16px 0; }
+    .field label { display: block; font-size: 14px; color: var(--text); margin-bottom: 8px; font-weight: 500; }
+    .field input, .field select { width: 100%; padding: 12px 14px; border-radius: 8px; border: 1px solid var(--soft-border); background: var(--bg); color: var(--text); outline: none; font-size: 14px; transition: border-color 0.2s ease; }
+    .field input:focus, .field select:focus { border-color: var(--text); }
+    .field select { cursor: pointer; -webkit-appearance: none; -moz-appearance: none; appearance: none; background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="%239a9a9a"><path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" /></svg>'); background-position: right 12px center; background-repeat: no-repeat; padding-right: 40px; }
+    .field select option { background: var(--bg); color: var(--text); }
+    .row-actions { display: flex; gap: 12px; justify-content: flex-end; margin-top: 24px; }
+    .btn { background: var(--btn-bg); color: var(--btn-text); border: 1px solid var(--border); padding: 10px 16px; border-radius: 8px; cursor: pointer; font-weight: 500; font-size: 14px; transition: all 0.2s ease; }
+    .btn:hover { background: #e0e0e0; }
+    .btn.secondary { background: transparent; color: var(--text); border-color: var(--soft-border); }
+    .btn.secondary:hover { background: var(--soft-border); }
+    .note { color: var(--muted); font-size: 13px; margin-top: 12px; line-height: 1.5; }
+    .local-model-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .local-model-status { color: var(--muted); font-size: 13px; }
   </style>
 </head>
 <body>
@@ -170,18 +175,34 @@
     </div>
 
     <div class="row">
-      <div class="hint">Concise. Assumes practitioner baseline. No fluff. Always verify content AI produces as it can be error prone. Made by Teddy Tennant and Roshan Sathish Sandhya.</div>
+      <div class="hint">Concise. Assumes practitioner baseline. No fluff. Always verify content AI produces as it can be error prone. Made by Teddy Tennant and tested by Roshan Sathish Sandhya.</div>
     </div>
   </div>
   <div id="settings-modal" class="modal" aria-hidden="true">
     <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="settings-title">
       <h2 id="settings-title">Settings</h2>
       <div class="field">
+        <label for="xai-api-key">xAI API Key</label>
+        <input type="password" id="xai-api-key" placeholder="Enter your xAI API key">
+      </div>
+      <div class="field">
+        <label for="anthropic-api-key">Anthropic API Key</label>
+        <input type="password" id="anthropic-api-key" placeholder="Enter your Anthropic API key">
+      </div>
+      <div class="field">
+        <label for="google-api-key">Google API Key</label>
+        <input type="password" id="google-api-key" placeholder="Enter your Google API key">
+      </div>
+      <div class="field">
+        <label for="openrouter-api-key">OpenRouter API Key</label>
+        <input type="password" id="openrouter-api-key" placeholder="Enter your OpenRouter API key">
+      </div>
+      <div class="field">
         <label for="model-select">Model</label>
-        <select id="model-select" class="settings-btn" style="width: 100%; padding-right: 28px; -webkit-appearance: none; -moz-appearance: none; appearance: none; background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="%239a9a9a'><path stroke-linecap='round' stroke-linejoin='round' d='m19.5 8.25-7.5 7.5-7.5-7.5' /></svg>'); background-position: right 8px center; background-repeat: no-repeat;">
-          <option value="grok-4">Advanced</option>
-          <option value="grok-3">Mid</option>
-          <option value="grok-3-mini">Small</option>
+        <select id="model-select">
+          <option value="grok-4">Grok 4</option>
+          <option value="claude-3-5-sonnet">Claude 4.5 Sonnet</option>
+          <option value="gemini-2-5-pro">Gemini 2.5 Pro</option>
           <option value="local-qwen-medical">Local Medical (Qwen 2.5 7B)</option>
         </select>
       </div>
