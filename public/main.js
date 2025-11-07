@@ -76,18 +76,31 @@ function applyLocalModelStatusUI(status) {
 
   switch (state) {
     case 'ready':
+      const deviceLabel = device === 'cuda' ? 'GPU' : device === 'cpu' ? 'CPU' : '';
       localModelStatusEl.textContent = detail
         ? detail
-        : device === 'cpu'
-          ? 'Ready. Running on CPU (slow).'
+        : deviceLabel
+          ? `Ready (${deviceLabel})`
           : 'Ready to use';
-      downloadLocalModelBtn.textContent = device === 'cpu' ? 'Ready (CPU)' : 'Ready';
+      downloadLocalModelBtn.textContent = deviceLabel ? `Ready (${deviceLabel})` : 'Ready';
       downloadLocalModelBtn.disabled = true;
       break;
     case 'downloading':
+      const downloadDetail = detail || 'Downloading model files from HuggingFace...';
+      localModelStatusEl.textContent = downloadDetail;
+      if (device === 'cuda') {
+        localModelStatusEl.textContent += ' (GPU mode: ~8 GB)';
+      } else if (device === 'cpu') {
+        localModelStatusEl.textContent += ' (CPU mode: ~22 GB)';
+      }
+      downloadLocalModelBtn.textContent = 'Downloading...';
+      downloadLocalModelBtn.disabled = true;
+      scheduleLocalModelPoll();
+      break;
     case 'loading':
-      localModelStatusEl.textContent = detail || 'Preparing model... This can take several minutes.';
-      downloadLocalModelBtn.textContent = 'Preparing...';
+      const loadingDetail = detail || 'Loading model into memory...';
+      localModelStatusEl.textContent = loadingDetail;
+      downloadLocalModelBtn.textContent = 'Loading...';
       downloadLocalModelBtn.disabled = true;
       scheduleLocalModelPoll();
       break;
@@ -103,7 +116,7 @@ function applyLocalModelStatusUI(status) {
       downloadLocalModelBtn.disabled = false;
       break;
     default:
-      localModelStatusEl.textContent = 'Not downloaded';
+      localModelStatusEl.textContent = 'Not installed';
       downloadLocalModelBtn.textContent = 'Download';
       downloadLocalModelBtn.disabled = false;
       break;

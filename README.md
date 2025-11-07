@@ -127,20 +127,66 @@ The Node server automatically spawns the Python FastAPI backend (override with `
 
 The app includes an optional local AI model for privacy and offline use. This requires additional setup but provides fast, private inference.
 
-#### Quick Setup:
-1. **Ensure GPU dependencies are installed** (see Python Dependencies section above)
-2. **In the web UI, go to Settings → Local Qwen Model → Download**
-3. **Wait for download and loading** (shows progress in status banner)
-4. **Select "Local Medical (Qwen 2.5 7B)"** in the model dropdown
+#### Installation Methods
+
+**Method 1: Web UI (Easiest)**
+1. Open the app and click **Settings** (⚙️)
+2. Go to **Local Qwen Model** section
+3. Click **Download** button
+4. Wait for installation to complete
+5. Select "Local Medical (Qwen 2.5 7B)" in model dropdown
+
+**Method 2: Command Line Install Script**
+```bash
+# Interactive installation with GPU/CPU auto-detection
+./install_qwen.sh
+
+# Check what will be downloaded
+./install_qwen.sh --check-deps
+
+# Install dependencies first
+./install_qwen.sh --install-deps
+
+# Force CPU mode even if GPU available
+./install_qwen.sh --force-cpu
+```
+
+**Method 3: Direct Python Script**
+```bash
+# Auto-detect GPU and install
+python3 install_qwen_model.py
+
+# Check status
+python3 install_qwen_model.py --check
+
+# Force CPU mode
+python3 install_qwen_model.py --force-cpu
+```
+
+#### What Gets Downloaded
+
+**GPU Mode** (CUDA detected):
+- LoRA adapter weights: ~8 GB
+- Inference: Fast (10-50x faster than CPU)
+- Requires: CUDA GPU with 8+ GB VRAM
+
+**CPU Mode** (No GPU or forced):
+- Base Qwen 2.5 7B model: ~14 GB
+- LoRA adapter weights: ~8 GB
+- Total: ~22 GB
+- Inference: Slower but works on any system
 
 #### System Requirements:
-- **GPU Mode:** ~8GB VRAM, ~8GB download (fast inference, recommended)
-- **CPU Mode:** ~16GB RAM, ~22GB download (slow but works without GPU)
+- **GPU Mode:** NVIDIA GPU (8+ GB VRAM), CUDA toolkit, ~8GB download
+- **CPU Mode:** 32+ GB RAM recommended, ~22GB download
 
 #### Important Notes:
-- **Unsloth requires GPU:** If you don't have a CUDA GPU, the system automatically falls back to CPU mode using transformers + PEFT
-- **Large downloads:** Both GPU and CPU modes require downloading large model files
-- **First-time setup:** The base Qwen 2.5 7B model (~14GB) is downloaded, then the medical LoRA adapter (~8GB) is applied
+- **First installation takes time** due to large downloads
+- **GPU mode is highly recommended** for acceptable inference speed
+- **All processing is local** - no data sent to external servers
+- **Works offline** after initial download
+
+For detailed installation instructions and troubleshooting, see [README_LOCAL_MODEL.md](README_LOCAL_MODEL.md).
 
 #### Troubleshooting Local Model:
 - **"PyTorch not found":** Install PyTorch (see Python Dependencies)

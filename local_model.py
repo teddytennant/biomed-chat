@@ -92,7 +92,7 @@ def _load_model() -> None:
         if _gpu_ready():
             _set_status(
                 "downloading",
-                detail="Downloading LoRA weights for GPU inference...",
+                detail="Downloading model files (~8-22 GB). Using 4-bit quantization for low VRAM usage...",
                 device="cuda",
             )
             load_4bit = True
@@ -111,7 +111,7 @@ def _load_model() -> None:
 
             _set_status(
                 "ready",
-                detail="Ready. GPU acceleration active.",
+                detail="Ready. GPU acceleration active (4-bit quantized, ~3.5 GB VRAM).",
                 device="cuda",
             )
             _mark_ready()
@@ -120,7 +120,8 @@ def _load_model() -> None:
         # CPU fallback path
         if not _torch_available():
             raise RuntimeError(
-                "PyTorch is required for CPU inference but is not installed."
+                "PyTorch is required for CPU inference but is not installed. "
+                "Install with: pip install torch"
             )
 
         try:
@@ -128,14 +129,15 @@ def _load_model() -> None:
             from peft import PeftModel  # type: ignore
         except ImportError as exc:  # pragma: no cover - surface informative error
             raise RuntimeError(
-                "CPU inference requires the 'transformers' and 'peft' packages."
+                "CPU inference requires 'transformers' and 'peft' packages. "
+                "Install with: pip install transformers peft"
             ) from exc
 
         base_model_id = "Qwen/Qwen2.5-7B-Instruct"
 
         _set_status(
             "downloading",
-            detail="Downloading base model (~14GB) for CPU inference...",
+            detail="Downloading base model (~14 GB) + adapters (~8 GB). This will take a while...",
             device="cpu",
         )
 
@@ -149,11 +151,18 @@ def _load_model() -> None:
 
         _set_status(
             "loading",
-            detail="Applying LoRA adapters for CPU inference...",
+            detail="Applying LoRA adapters. Please wait...",
             device="cpu",
         )
 
         peft_model = PeftModel.from_pretrained(base_model, MODEL_REPO_ID)
+        
+        _set_status(
+            "loading",
+            detail="Merging adapters with base model. This may take a few minutes...",
+            device="cpu",
+        )
+        
         merged_model = peft_model.merge_and_unload()
         merged_model.eval()
 

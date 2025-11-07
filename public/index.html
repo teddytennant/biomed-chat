@@ -212,7 +212,15 @@
           <span id="local-model-status" class="local-model-status">Checking status...</span>
           <button id="download-local-model" class="btn secondary" type="button">Download</button>
         </div>
-  <p class="note">Downloads ~8&nbsp;GB of adapters. Falls back to CPU if no CUDA GPU is detected (much slower, includes an additional ~14&nbsp;GB download).</p>
+        <p class="note">📥 Downloads fine-tuned Qwen 2.5 7B Medical LoRA from HuggingFace</p>
+        <p class="note">⚡ <strong>GPU mode</strong>: ~8-22 GB download (uses 4-bit quantization, ~3.5 GB VRAM)</p>
+        <p class="note">🐌 <strong>CPU mode</strong>: ~22 GB download (full precision, slower inference)</p>
+        <p class="note">💡 <strong>Note</strong>: GPU mode downloads base model + adapters but uses shared cache</p>
+        <p class="note">🔒 <strong>Privacy</strong>: All processing happens on your machine</p>
+        <p class="note" style="margin-top: 8px;">
+          ℹ️ First installation may take 10-60 minutes depending on your internet speed. 
+          See <a href="https://github.com/teddytennant/biomed-chat/blob/main/QUICKSTART_LOCAL_MODEL.md" target="_blank" style="color: #fff; text-decoration: underline;">Quick Start Guide</a> for help.
+        </p>
       </div>
       <div class="row-actions">
         <button id="close-settings" class="btn secondary">Close</button>
