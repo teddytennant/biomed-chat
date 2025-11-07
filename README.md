@@ -3,6 +3,11 @@
 
 Practitioner-focused chatbot UI for biomedical engineers. Proxies to Grok‑4 via xAI API with RAG and a tailored system prompt that assumes baseline field expertise.
 
+**📖 Quick Links:**
+- **[Installation Guide](INSTALL.md)** - Simplest way to get started
+- **[Quick Reference](QUICKREF.md)** - All commands in one page
+- **[Local Model Setup](README_LOCAL_MODEL.md)** - Download Qwen model
+
 **Note on API Providers:** This project is built around the Grok API, which has demonstrated high performance on benchmarks. While other providers are supported, Grok is recommended for the best experience.
 
 ## Features
@@ -19,84 +24,54 @@ Practitioner-focused chatbot UI for biomedical engineers. Proxies to Grok‑4 vi
 
 - **Node.js 18+** (required for the web interface)
 - **Python 3.10+** (required for AI inference and RAG)
-- **CUDA-capable GPU** (recommended for fast local model inference; CPU fallback available)
 - **Git** (for cloning the repository)
 
-**💡 Pro tip:** Use the automated `./setup.sh` script for the easiest installation experience.
+### Quick Start - One Command
 
-### Quick Start (Recommended)
+**Easiest way to get started:**
 
-1. **Clone and run the automated setup:**
+```bash
+git clone <repository-url> && cd biomed-chat && chmod +x quick-start.sh && ./quick-start.sh
+```
+
+This single command will:
+- ✅ Install all dependencies automatically
+- ✅ Set up configuration files  
+- ✅ Check for API keys (optional - runs in demo mode without them)
+- ✅ Start the application at `http://localhost:3000`
+
+### Alternative: Manual Setup
+
+If you prefer step-by-step control:
+
+1. **Clone and setup:**
    ```bash
    git clone <repository-url>
    cd biomed-chat
    ./setup.sh
    ```
 
-   The setup script will:
-   - Check all prerequisites
-   - Install Node.js and Python dependencies
-   - Detect GPU availability
-   - Create a `.env` template
-   - Provide next steps
-
-2. **Configure environment** (if not done automatically):
+2. **Add your API keys** (edit `.env`):
    ```bash
-   # Edit .env with your API keys
    nano .env  # or your preferred editor
    ```
 
-3. **Start the application:**
+3. **Start the app:**
    ```bash
    npm run dev
    ```
-   Open `http://localhost:3000` in your browser.
 
-### Manual Setup (Alternative)
+**That's it!** Open `http://localhost:3000` in your browser.
 
-If you prefer manual installation or the automated script fails:
+### Optional: Local Model
 
-### Detailed Installation
+To use the local Qwen 2.5 7B model for private inference:
+1. Open the web UI and click Settings
+2. Click "Download" in the Local Qwen Model section
+3. Wait for download to complete (10-60 minutes)
+4. Select "Local Medical (Qwen 2.5 7B)" from the model dropdown
 
-#### Node.js Dependencies (Required)
-```bash
-npm install
-```
-This installs the web server and UI dependencies.
-
-#### Python Dependencies
-
-**Core Dependencies (Required):**
-```bash
-pip install -r requirements.txt
-```
-
-**GPU Support (Recommended for Local Model):**
-If you have a CUDA-compatible GPU, the requirements.txt will automatically install GPU-optimized versions on Linux. For other platforms:
-
-- **macOS/Windows:** Install PyTorch first, then the other dependencies:
-  ```bash
-  pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121  # For CUDA 12.1
-  pip install accelerate bitsandbytes unsloth
-  ```
-
-**CPU-Only Mode:**
-If you don't have a GPU or prefer CPU-only operation:
-```bash
-# Install CPU versions (skip GPU packages)
-pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
-pip install transformers peft accelerate
-```
-
-#### Optional Biomedical Tools
-For advanced biomedical analysis features:
-```bash
-pip install biopython rdkit SimpleITK pydicom scipy pandas matplotlib plotly
-```
-
-### Configuration
-
-Create a `.env` file in the project root:
+See [QUICKSTART_LOCAL_MODEL.md](QUICKSTART_LOCAL_MODEL.md) for details.
 
 ```env
 # Choose your AI provider (grok recommended)
@@ -258,6 +233,88 @@ Mock responses include realistic biomedical engineering content with proper form
 ## Notes
 - System prompt emphasizes concise, actionable outputs with regulatory and validation hooks (IEC 60601, ISO 14971, FDA QSR) and avoids overexplaining fundamentals.
 - Streaming responses for low-latency UI.
+
+---
+
+## Troubleshooting
+
+### Quick Diagnosis
+
+Run the health check to diagnose issues:
+```bash
+./health-check.sh
+# or
+npm run health
+```
+
+This will automatically check:
+- ✅ Node.js and Python versions
+- ✅ Installed dependencies
+- ✅ Configuration files
+- ✅ Port availability
+- ✅ GPU detection
+- ✅ Disk space
+
+### Python Dependencies Issues
+
+If you see errors about externally-managed Python:
+```bash
+# The setup script now handles this automatically!
+# But if needed, manually install with:
+pip3 install --break-system-packages -r requirements.txt
+```
+
+### Server Won't Start
+
+**Check if Python service is running:**
+```bash
+ps aux | grep uvicorn
+```
+
+**Check for missing dependencies:**
+```bash
+python3 -c "import uvicorn, fastapi; print('✓ Core dependencies OK')"
+```
+
+**Restart the server:**
+```bash
+npm run dev
+```
+
+### Port Already in Use
+
+If port 3000 or 8000 is already in use:
+```bash
+# Change the port in .env
+PORT=3001
+```
+
+### Model Download Issues
+
+**Check disk space:**
+```bash
+df -h ~  # Need ~22 GB free space
+```
+
+**Check model status:**
+```bash
+npm run check-model
+```
+
+**Re-download model:**
+```bash
+./install_qwen.sh  # Will prompt before re-downloading
+```
+
+### Still Having Issues?
+
+1. Check the logs in the terminal where `npm run dev` is running
+2. Try restarting with a clean setup:
+   ```bash
+   rm -rf node_modules __pycache__
+   ./setup.sh
+   ```
+3. Open an issue on GitHub with error messages
 - Shift+Enter inserts newline. 
 - Mock responses maintain the same format and quality as AI responses.
 

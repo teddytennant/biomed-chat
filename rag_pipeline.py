@@ -500,4 +500,3 @@ class FlexibleRAGPipeline:
                 if value != expected:
                     return False
         return True
-```}

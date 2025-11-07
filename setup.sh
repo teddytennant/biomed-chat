@@ -69,7 +69,16 @@ echo ""
 
 # Install Python dependencies
 echo "🐍 Installing Python dependencies..."
-$PIP_CMD install -r requirements.txt
+
+# Check if system has externally-managed Python
+if $PIP_CMD install -r requirements.txt 2>&1 | grep -q "externally-managed-environment"; then
+    echo "⚠️  Detected externally-managed Python environment"
+    echo "   Installing with --break-system-packages flag..."
+    $PIP_CMD install --break-system-packages -r requirements.txt
+else
+    $PIP_CMD install -r requirements.txt
+fi
+
 echo "✅ Python dependencies installed"
 
 echo ""

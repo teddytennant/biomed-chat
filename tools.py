@@ -3,10 +3,21 @@ Biomedical engineering tools for the chatbot.
 These are functional implementations using public APIs and libraries.
 """
 import requests
-from Bio.Seq import Seq
-from Bio.SeqUtils import gc_fraction
-from rdkit import Chem
-from rdkit.Chem import Descriptors, Lipinski
+
+# Optional dependencies for biomedical tools
+try:
+    from Bio.Seq import Seq
+    from Bio.SeqUtils import gc_fraction
+    BIOPYTHON_AVAILABLE = True
+except ImportError:
+    BIOPYTHON_AVAILABLE = False
+
+try:
+    from rdkit import Chem
+    from rdkit.Chem import Descriptors, Lipinski
+    RDKIT_AVAILABLE = True
+except ImportError:
+    RDKIT_AVAILABLE = False
 
 def search_pubmed(query: str, max_results: int = 3) -> dict:
     """
@@ -73,6 +84,11 @@ def analyze_sequence(sequence: str, sequence_type: str) -> dict:
     """
     Analyze DNA, RNA, or protein sequences using Biopython.
     """
+    if not BIOPYTHON_AVAILABLE:
+        return {
+            "error": "Biopython is not installed. Install it with: pip install biopython"
+        }
+    
     try:
         seq_upper = sequence.upper().strip()
         bio_seq = Seq(seq_upper)
@@ -103,6 +119,11 @@ def calculate_drug_properties(smiles: str) -> dict:
     """
     Calculate molecular properties for a drug compound from its SMILES string using RDKit.
     """
+    if not RDKIT_AVAILABLE:
+        return {
+            "error": "RDKit is not installed. Install it with: pip install rdkit"
+        }
+    
     try:
         mol = Chem.MolFromSmiles(smiles)
         if mol is None:
