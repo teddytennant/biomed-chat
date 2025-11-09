@@ -228,10 +228,11 @@ def start_download() -> Dict[str, str | None]:
         if not _gpu_ready() and not _torch_available():
             _status["state"] = "error"
             _status["error"] = (
-                "PyTorch is required to run the local model. Install the CPU or GPU "
-                "build before retrying."
+                "Setup incomplete: The setup script hasn't been run. Please run "
+                "'./setup.sh' or './quick-start.sh' to install required dependencies "
+                "(including PyTorch) before downloading the local model."
             )
-            _status["detail"] = "Missing PyTorch runtime."
+            _status["detail"] = "Setup script not run - missing PyTorch."
             return dict(_status)
 
     _start_background_load("downloading")
