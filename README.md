@@ -1,48 +1,50 @@
-# Fine tuned model is here! Available at https://huggingface.co/ttennant/qwen2.5-7b-medical-lora. Now integrated in the UI with optional local inference.
 # Biomed Chat
 
-Practitioner-focused chatbot UI for biomedical engineers. Proxies to Grok‑4 via xAI API with RAG and a tailored system prompt that assumes baseline field expertise.
+Practitioner-focused chatbot UI for biomedical engineers with specialized AI responses for biomedical engineering topics. Supports multiple AI providers (Grok, Gemini, OpenAI, Anthropic) and includes an optional local medical model.
 
-**📖 Quick Links:**
+**🎉 Fine-tuned medical model available!** [Qwen 2.5 7B Medical LoRA](https://huggingface.co/ttennant/qwen2.5-7b-medical-lora) - now integrated with optional local inference.
+
+## 📖 Quick Links
+
 - **[Installation Guide](INSTALL.md)** - Simplest way to get started
 - **[Quick Reference](QUICKREF.md)** - All commands in one page
-- **[Local Model Setup](README_LOCAL_MODEL.md)** - Download Qwen model
-
-**Note on API Providers:** This project is built around the Grok API, which has demonstrated high performance on benchmarks. While other providers are supported, Grok is recommended for the best experience.
+- **[Local Model Guide](README_LOCAL_MODEL.md)** - Detailed local model setup
+- **[Local Model Quick Start](QUICKSTART_LOCAL_MODEL.md)** - Fast local model install
 
 ## Features
 
-- **Multi-API Support**: Supports Grok, Gemini, OpenAI, and Anthropic APIs.
-- **Smart API Fallback**: Automatically uses mock responses when API key is not available
-- **Biomedical Focus**: Specialized responses for biomedical engineering topics
-- **Streaming Responses**: Real-time response streaming for better UX
-- **Mock Mode**: Realistic demonstration responses when API is unavailable
+- **Multi-API Support**: Grok (recommended), Gemini, OpenAI, and Anthropic
+- **Optional Local Model**: Privacy-focused offline inference with Qwen 2.5 7B Medical LoRA
+- **Smart API Fallback**: Automatically uses mock responses when API unavailable
+- **Biomedical Focus**: Tailored system prompt for biomedical engineering professionals
+- **Streaming Responses**: Real-time response streaming for better user experience
+- **Demo Mode**: Full functionality without API keys using realistic mock responses
 
-## Setup
+## Quick Start
 
 ### Prerequisites
 
-- **Node.js 18+** (required for the web interface)
-- **Python 3.10+** (required for AI inference and RAG)
-- **Git** (for cloning the repository)
+- **Node.js 18+** - [Download](https://nodejs.org/)
+- **Python 3.10+** - [Download](https://www.python.org/)
+- **Git** - For cloning the repository
 
-### Quick Start - One Command
+### One-Command Installation
 
-**Easiest way to get started:**
+The fastest way to get started:
 
 ```bash
 git clone <repository-url> && cd biomed-chat && chmod +x quick-start.sh && ./quick-start.sh
 ```
 
-This single command will:
+This command will:
 - ✅ Install all dependencies automatically
 - ✅ Set up configuration files  
-- ✅ Check for API keys (optional - runs in demo mode without them)
+- ✅ Check for API keys (optional - works in demo mode without them)
 - ✅ Start the application at `http://localhost:3000`
 
-### Alternative: Manual Setup
+### Manual Installation
 
-If you prefer step-by-step control:
+For step-by-step control:
 
 1. **Clone and setup:**
    ```bash
@@ -51,33 +53,29 @@ If you prefer step-by-step control:
    ./setup.sh
    ```
 
-2. **Add your API keys** (edit `.env`):
+2. **Configure API keys** (optional - edit `.env`):
    ```bash
    nano .env  # or your preferred editor
    ```
 
-3. **Start the app:**
+3. **Start the application:**
    ```bash
    npm run dev
    ```
 
-**That's it!** Open `http://localhost:3000` in your browser.
+Open `http://localhost:3000` in your browser. The app works in demo mode without API keys!
 
-### Optional: Local Model
+## Configuration
 
-To use the local Qwen 2.5 7B model for private inference:
-1. Open the web UI and click Settings
-2. Click "Download" in the Local Qwen Model section
-3. Wait for download to complete (10-60 minutes)
-4. Select "Local Medical (Qwen 2.5 7B)" from the model dropdown
+### API Provider Setup
 
-See [QUICKSTART_LOCAL_MODEL.md](QUICKSTART_LOCAL_MODEL.md) for details.
+Edit `.env` to configure your preferred AI provider:
 
 ```env
 # Choose your AI provider (grok recommended)
 API_PROVIDER="grok"
 
-# API Keys (only one required based on provider)
+# API Keys - only one required based on provider
 GROK_API_KEY="your_grok_api_key_here"
 GEMINI_API_KEY="your_gemini_api_key_here"
 OPENAI_API_KEY="your_openai_api_key_here"
@@ -88,91 +86,109 @@ PORT=3000
 SITE_PASSWORD="your_password_here"  # For protected access
 ```
 
-**For demo/mock mode:** Comment out or remove the API key to use predefined responses without API costs.
+**Demo Mode**: Comment out or remove API keys to use predefined responses without API costs.
 
-## Run
+**Recommended Provider**: Grok offers best performance for biomedical engineering topics. Other providers are fully supported.
 
-```sh
+### Running the Application
+
+```bash
 npm run dev
 ```
 
-The Node server automatically spawns the Python FastAPI backend (override with `DISABLE_PYTHON_AUTOSTART=1` if you prefer to manage it manually). Open `http://localhost:3000`.
+The Node server automatically spawns the Python FastAPI backend. To manage the Python service manually, set `DISABLE_PYTHON_AUTOSTART=1` in your environment.
 
-### Using the Local Qwen 2.5 7B Model
+## Local Model Setup (Optional)
 
-The app includes an optional local AI model for privacy and offline use. This requires additional setup but provides fast, private inference.
+The application includes an optional local Qwen 2.5 7B Medical LoRA model for privacy-focused, offline inference.
 
-#### Installation Methods
+### Installation Methods
 
-**Method 1: Web UI (Easiest)**
+**Method 1: Web UI (Recommended)**
 1. Open the app and click **Settings** (⚙️)
-2. Go to **Local Qwen Model** section
+2. Navigate to **Local Qwen Model** section
 3. Click **Download** button
-4. Wait for installation to complete
-5. Select "Local Medical (Qwen 2.5 7B)" in model dropdown
+4. Wait for installation (10-60 minutes depending on connection)
+5. Select "Local Medical (Qwen 2.5 7B)" from model dropdown
 
-**Method 2: Command Line Install Script**
+**Method 2: Command Line**
 ```bash
 # Interactive installation with GPU/CPU auto-detection
 ./install_qwen.sh
 
-# Check what will be downloaded
-./install_qwen.sh --check-deps
-
-# Install dependencies first
-./install_qwen.sh --install-deps
-
-# Force CPU mode even if GPU available
-./install_qwen.sh --force-cpu
+# Or use npm scripts
+npm run install-model          # Auto-detect GPU/CPU
+npm run install-model-cpu      # Force CPU mode
+npm run check-model            # Check installation status
 ```
 
-**Method 3: Direct Python Script**
+### System Requirements
+
+**GPU Mode** (Recommended):
+- NVIDIA GPU with 8+ GB VRAM
+- CUDA toolkit installed
+- ~8 GB download
+- Fast inference (10-50x faster than CPU)
+
+**CPU Mode**:
+- 32+ GB RAM recommended
+- ~22 GB download (base model + adapters)
+- Slower inference but works on any system
+
+### Key Benefits
+
+- ✓ All processing on your local machine
+- ✓ No data sent to external servers
+- ✓ Works completely offline after download
+- ✓ HIPAA-friendly for sensitive data
+- ✓ No API costs
+
+For detailed instructions and troubleshooting, see [README_LOCAL_MODEL.md](README_LOCAL_MODEL.md) or [QUICKSTART_LOCAL_MODEL.md](QUICKSTART_LOCAL_MODEL.md).
+
+## Mock Response System
+
+When an API key is not configured, the system automatically provides realistic mock responses for common biomedical engineering topics:
+
+- **ECG/EKG Analysis**: Signal processing, QRS detection, rhythm analysis
+- **Bioimpedance**: Measurement techniques, safety considerations
+- **FDA Regulatory**: 510(k) submission process, requirements
+- **MRI Safety**: Magnetic field considerations, device testing
+- **General Topics**: Fallback responses explaining mock mode
+
+Mock responses include proper formatting, references, and streaming behavior identical to real API responses.
+
+### API Modes
+
+**Production Mode** (API key configured):
+- Uses selected API provider for dynamic responses
+- Falls back to mocks if API fails
+
+**Demo Mode** (no API key):
+- Uses predefined responses for common topics
+- Perfect for demonstrations and development
+- No API costs or rate limits
+
+## Troubleshooting
+
+### Quick Diagnosis
+
+Run the automated health check to diagnose common issues:
+
 ```bash
-# Auto-detect GPU and install
-python3 install_qwen_model.py
-
-# Check status
-python3 install_qwen_model.py --check
-
-# Force CPU mode
-python3 install_qwen_model.py --force-cpu
+./health-check.sh
+# or
+npm run health
 ```
 
-#### What Gets Downloaded
+This automatically checks:
+- ✅ Node.js and Python versions
+- ✅ Installed dependencies
+- ✅ Configuration files
+- ✅ Port availability
+- ✅ GPU detection
+- ✅ Disk space
 
-**GPU Mode** (CUDA detected):
-- LoRA adapter weights: ~8 GB
-- Inference: Fast (10-50x faster than CPU)
-- Requires: CUDA GPU with 8+ GB VRAM
-
-**CPU Mode** (No GPU or forced):
-- Base Qwen 2.5 7B model: ~14 GB
-- LoRA adapter weights: ~8 GB
-- Total: ~22 GB
-- Inference: Slower but works on any system
-
-#### System Requirements:
-- **GPU Mode:** NVIDIA GPU (8+ GB VRAM), CUDA toolkit, ~8GB download
-- **CPU Mode:** 32+ GB RAM recommended, ~22GB download
-
-#### Important Notes:
-- **First installation takes time** due to large downloads
-- **GPU mode is highly recommended** for acceptable inference speed
-- **All processing is local** - no data sent to external servers
-- **Works offline** after initial download
-
-For detailed installation instructions and troubleshooting, see [README_LOCAL_MODEL.md](README_LOCAL_MODEL.md).
-
-#### Troubleshooting Local Model:
-- **"PyTorch not found":** Install PyTorch (see Python Dependencies)
-- **"CUDA not available":** Falls back to CPU mode automatically
-- **Slow responses:** Use GPU mode or reduce prompt length
-- **Download fails:** Check internet connection and disk space
-- **Model won't load:** Clear browser cache and restart the app
-
-### Troubleshooting
-
-#### Common Issues:
+### Common Issues
 
 **"Module not found" errors:**
 ```bash
@@ -183,141 +199,93 @@ pip install -r requirements.txt --force-reinstall
 
 **Port already in use:**
 ```bash
-# Change port in .env or kill process
+# Change port in .env or kill the process
 lsof -ti:3000 | xargs kill -9
+# Or change port in .env:
+echo "PORT=3001" >> .env
+```
+
+**Python service not starting:**
+```bash
+# Check if service is running
+ps aux | grep uvicorn
+
+# Check dependencies
+python3 -c "import uvicorn, fastapi; print('✓ Core dependencies OK')"
+
+# Restart the server
+npm run dev
 ```
 
 **GPU not detected:**
 - Ensure CUDA drivers are installed
 - Check `nvidia-smi` command works
-- Verify PyTorch CUDA installation: `python -c "import torch; print(torch.cuda.is_available())"`
+- Verify PyTorch CUDA: `python -c "import torch; print(torch.cuda.is_available())"`
 
-**Unsloth GPU requirement:**
-- If you see import errors related to Unsloth, don't worry - CPU mode will be used automatically
-- CPU mode uses standard transformers + PEFT instead of Unsloth
-- CPU mode is slower but works on any system with PyTorch
-
-**API rate limits:**
-- Switch to mock mode by removing API keys
-- Wait for rate limit reset
-- Consider upgrading API plan
-
-**Slow local model:**
-- Use GPU if available
-- Reduce conversation history
-- Consider CPU-optimized model (coming soon)
-
-## Mock Response System
-
-When the corresponding API key for the selected provider is not set, the system automatically provides mock responses for:
-
-- **ECG/EKG Analysis**: Signal processing, QRS detection, rhythm analysis
-- **Bioimpedance**: Measurement techniques, safety considerations
-- **FDA Regulatory**: 510(k) submission process, requirements
-- **MRI Safety**: Magnetic field considerations, device testing
-- **General Topics**: Fallback responses explaining mock mode
-
-Mock responses include realistic biomedical engineering content with proper formatting, references, and streaming behavior identical to the real API.
-
-## API Modes
-
-**Production Mode** (API key configured):
-- Uses the selected API provider for dynamic responses
-- Falls back to mocks if API fails
-
-**Demo/Mock Mode** (no API key):
-- Uses predefined responses for common topics
-- Perfect for demonstrations and development
-- No API costs or rate limits
-
-## Notes
-- System prompt emphasizes concise, actionable outputs with regulatory and validation hooks (IEC 60601, ISO 14971, FDA QSR) and avoids overexplaining fundamentals.
-- Streaming responses for low-latency UI.
-
----
-
-## Troubleshooting
-
-### Quick Diagnosis
-
-Run the health check to diagnose issues:
+**Python externally-managed environment:**
 ```bash
-./health-check.sh
-# or
-npm run health
-```
-
-This will automatically check:
-- ✅ Node.js and Python versions
-- ✅ Installed dependencies
-- ✅ Configuration files
-- ✅ Port availability
-- ✅ GPU detection
-- ✅ Disk space
-
-### Python Dependencies Issues
-
-If you see errors about externally-managed Python:
-```bash
-# The setup script now handles this automatically!
-# But if needed, manually install with:
+# The setup script handles this automatically
+# Manual install if needed:
 pip3 install --break-system-packages -r requirements.txt
 ```
 
-### Server Won't Start
-
-**Check if Python service is running:**
+**Model download issues:**
 ```bash
-ps aux | grep uvicorn
-```
+# Check disk space (need ~22 GB)
+df -h ~
 
-**Check for missing dependencies:**
-```bash
-python3 -c "import uvicorn, fastapi; print('✓ Core dependencies OK')"
-```
-
-**Restart the server:**
-```bash
-npm run dev
-```
-
-### Port Already in Use
-
-If port 3000 or 8000 is already in use:
-```bash
-# Change the port in .env
-PORT=3001
-```
-
-### Model Download Issues
-
-**Check disk space:**
-```bash
-df -h ~  # Need ~22 GB free space
-```
-
-**Check model status:**
-```bash
+# Check model status
 npm run check-model
+
+# Re-download if needed
+./install_qwen.sh
 ```
 
-**Re-download model:**
-```bash
-./install_qwen.sh  # Will prompt before re-downloading
-```
+**API rate limits:**
+- Switch to demo mode by removing API keys
+- Wait for rate limit reset
+- Consider upgrading API plan
 
-### Still Having Issues?
+**Slow local model inference:**
+- Use GPU mode if available (10-50x faster)
+- Reduce conversation history length
+- Ensure no other GPU-intensive applications are running
 
-1. Check the logs in the terminal where `npm run dev` is running
-2. Try restarting with a clean setup:
+**Unsloth import errors:**
+- Don't worry - system automatically falls back to CPU mode
+- CPU mode uses standard transformers + PEFT
+- Slower but fully functional
+
+**Still having issues?**
+1. Check terminal logs from `npm run dev`
+2. Try a clean setup:
    ```bash
    rm -rf node_modules __pycache__
    ./setup.sh
    ```
-3. Open an issue on GitHub with error messages
-- Shift+Enter inserts newline. 
-- Mock responses maintain the same format and quality as AI responses.
+3. Open a GitHub issue with error messages and health check output
 
-## Coming soon:
-- Progress UI for download size and throughput
-- Optional CPU-only distilled model path for lower-end hardware
+## Technical Notes
+
+- System prompt emphasizes concise, actionable outputs with regulatory and validation hooks (IEC 60601, ISO 14971, FDA QSR)
+- Streaming responses provide low-latency user interface
+- Mock responses maintain identical format and quality to API responses
+- Shift+Enter inserts newline in chat interface
+
+## Roadmap
+
+- Progress UI for model download size and throughput
+- CPU-optimized distilled model for lower-end hardware
+- Additional fine-tuning for specialized biomedical subfields
+
+---
+
+## License
+
+See [LICENSE](LICENSE) file for details.
+
+## Support
+
+- **Documentation**: Check [Quick Links](#-quick-links) for detailed guides
+- **Issues**: Open a GitHub issue with error messages and health check output
+- **Health Check**: Run `./health-check.sh` for automated diagnostics
