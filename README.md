@@ -36,7 +36,7 @@ Practitioner-focused chatbot UI for biomedical engineers. Proxies to Grok‑4 vi
    ```
    *(Or wherever you saved the folder. If you're unsure, ask someone or use the file explorer to find the exact path)*
 
-4. **Start the application:**
+4. **Start the application (assumes that docker is already installed on your system, if not please install):**
    ```bash
    docker-compose up -d
    ```
