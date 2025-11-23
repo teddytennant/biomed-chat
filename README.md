@@ -10,6 +10,87 @@ Practitioner-focused chatbot UI for biomedical engineers. Proxies to Grok‑4 vi
 
 **Note on API Providers:** This project is built around the Grok API, which has demonstrated high performance on benchmarks. While other providers are supported, Grok is recommended for the best experience.
 
+## 🚀 Quick Start with Docker (Easiest Way)
+
+**No coding required!** Use Docker to run Biomed Chat on any computer (Windows, Mac, or Linux).
+
+### What You Need
+- **Computer** (Windows, Mac, or Linux)
+- **Docker Desktop** installed ([Download here](https://www.docker.com/products/docker-desktop))
+- **Web browser** (Chrome, Firefox, Safari, or Edge)
+
+### Step-by-Step Instructions
+
+1. **Download the project:**
+   - If you have the files, skip to step 2
+   - If not, download or clone the biomed-chat folder to your computer
+
+2. **Open Terminal/Command Prompt:**
+   - **Windows:** Press `Win + R`, type `cmd`, press Enter
+   - **Mac:** Press `Cmd + Space`, type "Terminal", press Enter
+   - **Linux:** Press `Ctrl + Alt + T`
+
+3. **Navigate to the biomedical-chat folder:**
+   ```bash
+   cd Downloads/biomed-chat
+   ```
+   *(Or wherever you saved the folder. If you're unsure, ask someone or use the file explorer to find the exact path)*
+
+4. **Start the application:**
+   ```bash
+   docker-compose up -d
+   ```
+   *This command downloads everything needed and starts the app in the background*
+
+5. **Open your web browser and go to:**
+   ```
+   http://localhost:3000
+   ```
+   *Or try: http://127.0.0.1:3000*
+
+That's it! Biomed Chat will open in your browser.
+
+### First Time Setup (Optional)
+- **Try the demo mode first** - it works without any setup!
+- **For full features:** Click the ⚙️ Settings icon and add an API key (see below)
+
+### What If Something Goes Wrong?
+
+**"command not found" or "docker-compose not found":**
+- Make sure Docker Desktop is installed and running
+- Try restarting your terminal
+
+**"Port already in use" or "address already in use":**
+- Close other web applications or change the port by editing docker-compose.yml:
+  ```yaml
+  ports:
+    - "3001:3000"  # Use port 3001 instead
+  ```
+
+**"Permission denied" or "access denied":**
+- On Mac/Linux: Try `sudo docker-compose up -d`
+- Contact IT support if issues persist
+
+**Application won't load:**
+- Wait 1-2 minutes for first startup (downloads models)
+- Check Docker Desktop - make sure containers are running
+- Try refreshing the browser page
+
+**Need to stop the app:**
+```bash
+docker-compose down
+```
+
+**Need more help?**
+- Check the [Docker Guide](DOCKER.md) for detailed instructions
+- Most issues are solved by restarting Docker Desktop
+
+### Benefits of Docker
+✅ **Works on any computer** - same setup everywhere  
+✅ **No installation headaches** - everything included  
+✅ **Safe and isolated** - doesn't interfere with your system  
+✅ **Easy cleanup** - delete when done  
+
 ## Features
 
 - **Multi-API Support**: Supports Grok, Gemini, OpenAI, and Anthropic APIs.
