@@ -28,6 +28,8 @@ Practitioner-focused chatbot UI for biomedical engineers. Proxies to Grok‑4 vi
 
 **If you are a patient, parent, or looking for medical help — close this page now and contact a real doctor.**
 
+**If you are a biomedical engineer working on devices, regulatory submissions, or research — welcome! This tool is built for you.**
+
 
 **📖 Quick Links:**
 - **[Installation Guide](INSTALL.md)** - Simplest way to get started
