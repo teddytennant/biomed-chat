@@ -13,9 +13,11 @@ Practitioner-focused chatbot UI for biomedical engineers. Proxies to Grok‑4 vi
 
 **30 SAFETY & ETHICS COMMITS ADDED (DECEMBER 2025)**
 
-**1. Mandatory legal disclaimer on every response**
+   **1. Mandatory legal disclaimer on every response**
 
-**2. First-time user legal acceptance modal with timestamp**
+   **2. First-time user legal acceptance modal with timestamp**
+
+   **3. Refusal engine blocking 200+ lethal categories (suicide, off-label drugs, DIY gene editing, etc.)**
 
 
 
