@@ -12,6 +12,7 @@ Practitioner-focused chatbot UI for biomedical engineers. Proxies to Grok‑4 vi
 **You must personally accept these terms before using the application.**
 
 **30 SAFETY & ETHICS COMMITS ADDED (DECEMBER 2025)**
+**1. Mandatory legal disclaimer on every response**
 
 **📖 Quick Links:**
 - **[Installation Guide](INSTALL.md)** - Simplest way to get started
