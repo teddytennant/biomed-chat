@@ -21,7 +21,7 @@ Practitioner-focused chatbot UI for biomedical engineers. Proxies to Grok‑4 vi
 - Uses large language models (Grok-4 or local Qwen 2.5 7B) with a biomedical-engineering focus
 
 **What this tool is NOT and will NEVER be:**
-
+- A replacement for a licensed physician or clinical decision support system
 
 
 **📖 Quick Links:**
