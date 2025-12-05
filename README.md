@@ -24,6 +24,7 @@ Practitioner-focused chatbot UI for biomedical engineers. Proxies to Grok‑4 vi
 - A replacement for a licensed physician or clinical decision support system
 - Cleared or certified by FDA, CE, TGA, or any medical regulatory body
 - Safe to use for diagnosing yourself, your family, or any patient
+- Allowed to give treatment, drug, or dosing advice
 
 
 
