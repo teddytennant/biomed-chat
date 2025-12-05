@@ -20,15 +20,6 @@ Practitioner-focused chatbot UI for biomedical engineers. Proxies to Grok‑4 vi
 - Designed to help discuss standards (IEC 60601, ISO 14971), 510(k) submissions, MRI safety, signal processing, and similar engineering topics
 - Uses large language models (Grok-4 or local Qwen 2.5 7B) with a biomedical-engineering focus
 
-**What this tool is NOT and will NEVER be:**
-- A replacement for a licensed physician or clinical decision support system
-- Cleared or certified by FDA, CE, TGA, or any medical regulatory body
-- Safe to use for diagnosing yourself, your family, or any patient
-- Allowed to give treatment, drug, or dosing advice
-
-**If you are a patient, parent, or looking for medical help — close this page now and contact a real doctor.**
-
-**If you are a biomedical engineer working on devices, regulatory submissions, or research — welcome! This tool is built for you.**
 
 
 **📖 Quick Links:**
