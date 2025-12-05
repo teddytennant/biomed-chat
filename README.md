@@ -15,6 +15,9 @@ Practitioner-focused chatbot UI for biomedical engineers. Proxies to Grok‑4 vi
 
 **This is NOT a medical doctor, NOT a diagnostic tool, and NOT approved for any patient care.**
 
+**What this tool IS:**
+- A research-only chatbot made for biomedical engineers and device developers
+
 
 **📖 Quick Links:**
 - **[Installation Guide](INSTALL.md)** - Simplest way to get started
