@@ -298,7 +298,7 @@ When the corresponding API key for the selected provider is not set, the system 
 - **MRI Safety**: Magnetic field considerations, device testing
 - **General Topics**: Fallback responses explaining mock mode
 
-Mock responses include realistic biomedical engineering content with proper formatting, references, and streaming behavior identical to the real API.
+Mock responses include realistic biomedical engineering content with proper formatting, references, and streaming behavior identical to the real API. [For contributers only and testers]
 
 ## API Modes
 
