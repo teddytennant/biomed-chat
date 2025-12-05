@@ -11,6 +11,7 @@ Practitioner-focused chatbot UI for biomedical engineers. Proxies to Grok‑4 vi
 **SUICIDE HOTLINE (US): 988 • (UK): 116 123 • (AU): 13 11 14**  
 **You must personally accept these terms before using the application.**
 
+**BEFORE YOU USE BIOMED CHAT — PLEASE READ THIS FIRST**
 
 **📖 Quick Links:**
 - **[Installation Guide](INSTALL.md)** - Simplest way to get started
