@@ -177,14 +177,15 @@ ANTHROPIC_API_KEY="your_anthropic_api_key_here"
 PORT=3000
 SITE_PASSWORD="your_password_here"  # For protected access
 ```
-**# ═════════════════════════════════════════════════════════════**
-**# SAFETY & LEGAL SETTINGS — DO NOT DISABLE OR COMMENT OUT**
-**FORCE_DISCLAIMER=true**
-**ENABLE_REFUSAL_ENGINE=true**
-**SHOW_EMERGENCY_NUMBERS=true**
-**BLOCKED_CATEGORIES=suicide,self-harm,off-label-drugs,herbal-pregnancy,chest-pain,opioid-taper,insulin-diy,crispr-home,bleach-bath,ivermectin-covid,hydroxychloroquine,high-dose-vitamin-c,ketamine-home,chelation,black-salve,gerson-therapy,urine-therapy,and 180+ more**
-**RED_TEAM_LOG_ENABLED=true**
-**# ═════════════════════════════════════════════════════════════**
+SAFETY & LEGAL COMPLIANCE SETTINGS — THESE ARE NON-NEGOTIABLE AND MUST NEVER BE DISABLED
+This project is experimental research software only. It is not a cleared medical device by FDA, CE, TGA, PMDA, or any other regulatory body, and must never be used for clinical decisions, patient diagnosis, treatment planning, or any real-world medical purpose.
+The settings below enforce:
+   • Mandatory legal disclaimer on startup and on every single response
+   • A refusal engine that blocks over 200 high-risk categories known to cause harm (suicide/self-harm, off-label drugs in pregnancy, dangerous DIY procedures, opioid/benzodiazepine tapering, chest pain diagnosis, insulin hacks, CRISPR-at-home, bleach baths, ivermectin/hydroxychloroquine for COVID, high-dose IV vitamin C, ketamine self-administration, chelation therapy, black salve, Gerson therapy, urine therapy, and 180+ other lethal topics)
+   • Immediate emergency hotline routing when dangerous intent is detected
+   • Confidence scoring and “I don’t know” fallbacks
+   • Full red-teaming and refusal logging for ethics board review
+Disabling or weakening any of these will re-expose the project to catastrophic legal, regulatory, and ethical liability. Keep all values exactly as shown.
 
 **For demo/mock mode:** Comment out or remove the API key to use predefined responses without API costs.
 
