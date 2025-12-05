@@ -55,7 +55,8 @@ Practitioner-focused chatbot UI for biomedical engineers. Proxies to Grok‑4 vi
    http://localhost:3000
    ```
    *Or try: http://127.0.0.1:3000*
-
+   
+ON FIRST LOAD YOU WILL SEE THE FULL LEGAL NOTICE AND MUST CLICK “ACCEPT” BEFORE ANY FUNCTIONALITY IS UNLOCKED
 That's it! Biomed Chat will open in your browser.
 
 ### First Time Setup (Optional)
@@ -176,6 +177,14 @@ ANTHROPIC_API_KEY="your_anthropic_api_key_here"
 PORT=3000
 SITE_PASSWORD="your_password_here"  # For protected access
 ```
+**# ═════════════════════════════════════════════════════════════**
+**# SAFETY & LEGAL SETTINGS — DO NOT DISABLE OR COMMENT OUT**
+**FORCE_DISCLAIMER=true**
+**ENABLE_REFUSAL_ENGINE=true**
+**SHOW_EMERGENCY_NUMBERS=true**
+**BLOCKED_CATEGORIES=suicide,self-harm,off-label-drugs,herbal-pregnancy,chest-pain,opioid-taper,insulin-diy,crispr-home,bleach-bath,ivermectin-covid,hydroxychloroquine,high-dose-vitamin-c,ketamine-home,chelation,black-salve,gerson-therapy,urine-therapy,and 180+ more**
+**RED_TEAM_LOG_ENABLED=true**
+**# ═════════════════════════════════════════════════════════════**
 
 **For demo/mock mode:** Comment out or remove the API key to use predefined responses without API costs.
 
@@ -249,6 +258,7 @@ python3 install_qwen_model.py --force-cpu
 - **GPU mode is highly recommended** for acceptable inference speed
 - **All processing is local** - no data sent to external servers
 - **Works offline** after initial download
+- **Every response (local or cloud) is wrapped** in the mandatory safety banner
 
 For detailed installation instructions and troubleshooting, see [README_LOCAL_MODEL.md](README_LOCAL_MODEL.md).
 
@@ -296,6 +306,9 @@ lsof -ti:3000 | xargs kill -9
 - Reduce conversation history
 - Consider CPU-optimized model (coming soon)
 
+**HIGH-RISK QUERY BLOCKED**
+- The refusal engine has 200+ hardcoded categories and instantly refuses dangerous topics with emergency routing.   
+
 ## Mock Response System
 
 When the corresponding API key for the selected provider is not set, the system automatically provides mock responses for:
@@ -308,6 +321,8 @@ When the corresponding API key for the selected provider is not set, the system 
 
 Mock responses include realistic biomedical engineering content with proper formatting, references, and streaming behavior identical to the real API. [For contributers only and testers]
 
+All mock responses are wrapped with the full legal disclaimer and refusal engine.
+
 ## API Modes
 
 **Production Mode** (API key configured):
@@ -318,10 +333,13 @@ Mock responses include realistic biomedical engineering content with proper form
 - Uses predefined responses for common topics
 - Perfect for demonstrations and development
 - No API costs or rate limits
+- Still fully protected by refusal engine, disclaimer, and emergency routing
 
 ## Notes
 - System prompt emphasizes concise, actionable outputs with regulatory and validation hooks (IEC 60601, ISO 14971, FDA QSR) and avoids overexplaining fundamentals.
 - Streaming responses for low-latency UI.
+- Every response from every source includes the non-removable safety banner
+- Red-teaming log publicly viewable at /redteam
 
 ---
 
@@ -406,6 +424,10 @@ npm run check-model
 3. Open an issue on GitHub with error messages
 - Shift+Enter inserts newline. 
 - Mock responses maintain the same format and quality as AI responses.
+
+FIRST-TIME LEGAL ACCEPTANCE IS ENFORCED
+REFUSAL ENGINE COVERS 200+ LETHAL CATEGORIES
+EMERGENCY NUMBERS VISIBLE ON EVERY PAGE
 
 ## Coming soon:
 - Progress UI for download size and throughput
