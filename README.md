@@ -11,15 +11,6 @@ Practitioner-focused chatbot UI for biomedical engineers. Proxies to Grok‑4 vi
 **SUICIDE HOTLINE (US): 988 • (UK): 116 123 • (AU): 13 11 14**  
 **You must personally accept these terms before using the application.**
 
-**30 SAFETY & ETHICS COMMITS ADDED (DECEMBER 2025)**
-
-   **1. Mandatory legal disclaimer on every response**
-
-   **2. First-time user legal acceptance modal with timestamp**
-
-   **3. Refusal engine blocking 200+ lethal categories (suicide, off-label drugs, DIY gene editing, etc.)**
-
-
 
 **📖 Quick Links:**
 - **[Installation Guide](INSTALL.md)** - Simplest way to get started
