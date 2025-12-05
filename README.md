@@ -3,6 +3,14 @@
 
 Practitioner-focused chatbot UI for biomedical engineers. Proxies to Grok‑4 via xAI API with RAG and a tailored system prompt that assumes baseline field expertise.
 
+**⚠️ CRITICAL LEGAL & SAFETY NOTICE (NON-REMOVABLE) ⚠️**  
+**THIS SOFTWARE IS EXPERIMENTAL RESEARCH CODE ONLY**  
+**IT IS NOT A MEDICAL DEVICE • IT IS NOT CLEARED BY FDA, CE, OR ANY REGULATORY BODY**  
+**NEVER USE OUTPUT FOR CLINICAL DECISIONS, PATIENT CARE, OR DIAGNOSIS**  
+**IN EMERGENCIES CALL 911 (US) / 112 (EU) / YOUR LOCAL EMERGENCY NUMBER**  
+**SUICIDE HOTLINE (US): 988 • (UK): 116 123 • (AU): 13 11 14**  
+**You must personally accept these terms before using the application.**
+
 **📖 Quick Links:**
 - **[Installation Guide](INSTALL.md)** - Simplest way to get started
 - **[Quick Reference](QUICKREF.md)** - All commands in one page
