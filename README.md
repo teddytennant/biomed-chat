@@ -13,6 +13,9 @@ Practitioner-focused chatbot UI for biomedical engineers. Proxies to Grok‑4 vi
 
 **BEFORE YOU USE BIOMED CHAT — PLEASE READ THIS FIRST**
 
+**This is NOT a medical doctor, NOT a diagnostic tool, and NOT approved for any patient care.**
+
+
 **📖 Quick Links:**
 - **[Installation Guide](INSTALL.md)** - Simplest way to get started
 - **[Quick Reference](QUICKREF.md)** - All commands in one page
