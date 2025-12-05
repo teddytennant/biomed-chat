@@ -26,6 +26,7 @@ Practitioner-focused chatbot UI for biomedical engineers. Proxies to Grok‑4 vi
 - Safe to use for diagnosing yourself, your family, or any patient
 - Allowed to give treatment, drug, or dosing advice
 
+**If you are a patient, parent, or looking for medical help — close this page now and contact a real doctor.**
 
 
 **📖 Quick Links:**
