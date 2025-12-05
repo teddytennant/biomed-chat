@@ -195,6 +195,8 @@ The settings below enforce:
    
 Disabling or weakening any of these will re-expose the project to catastrophic legal, regulatory, and ethical liability. Keep all values exactly as shown.
 
+**Biomedical-specific hard rule —** never allow advice that could be interpreted as clinical practe
+
 **For demo/mock mode:** Comment out or remove the API key to use predefined responses without API costs.
 
 ## Run
