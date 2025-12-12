@@ -1,19 +1,24 @@
 # ============================================
-# Import Libraries
+# Ultra-Fast Biomedical Fine-Tune with Unsloth (2025 Best Practice)
+# Works on 1xA100 80GB or 2x4090/3090
 # ============================================
+import torch
 from unsloth import FastLanguageModel
 from datasets import load_dataset, concatenate_datasets
 from trl import SFTTrainer
 from transformers import TrainingArguments
-import torch
+import os
 
 # ============================================
-# Load Llama-2-7b Model
+# 1. Config
 # ============================================
 max_seq_length = 4096 # Changed max_seq_length
 dtype = torch.bfloat16
 load_in_4bit = True
 
+# ============================================
+# 2. Load Model + Tokenizer with Flash Attention
+# ============================================
 model, tokenizer = FastLanguageModel.from_pretrained(
     model_name="meta-llama/Llama-2-7b-hf", # Changed model name to Llama-2-7b
     max_seq_length=max_seq_length,
@@ -22,6 +27,21 @@ model, tokenizer = FastLanguageModel.from_pretrained(
     device_map="auto",
     trust_remote_code=True,
 )
+
+model=FastLanguageModel.get_peft_model(
+    model,
+    r=64,
+    target_modules=["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"],
+    lora_alpha=64,
+    lora_dropout=0.05
+    bia="none",
+    use_gradient_checkpointing="unsloth",
+    random_state=3407,
+    use_rslora=True,
+    loftq_config=None,
+)
+
+print("✓ Model & LoRA ready")
 
 print("✓ Model loaded successfully")
 
