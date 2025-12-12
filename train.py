@@ -1,92 +1,77 @@
 # ============================================
-# Ultra-Fast Biomedical Fine-Tune with Unsloth (2025 Best Practice)
-# Works on 1xA100 80GB or 2x4090/3090
+# Ultra-Fast Biomedical Fine-Tune (2025 Best Practice)
+# Works on 1xA100 80GB
 # ============================================
 import torch
-from unsloth import FastLanguageModel
-from datasets import load_dataset, concatenate_datasets
+from datasets import load_dataset
 from trl import SFTTrainer
-from transformers import TrainingArguments
+from transformers import TrainingArguments, AutoTokenizer, BitsAndBytesConfig, AutoProcessor
+from transformers import Glm4vForConditionalGeneration
+from peft import LoraConfig, get_peft_model, PeftModel
 import os
 
 # ============================================
 # 1. Config
 # ============================================
-max_seq_length = 4096 # Changed max_seq_length
+max_seq_length = 4096
 dtype = torch.bfloat16
-load_in_4bit = True
 
 # ============================================
-# 2. Load Model + Tokenizer with Flash Attention
+# 2. Load Model + Tokenizer with 4-bit Quantization
 # ============================================
-model, tokenizer = FastLanguageModel.from_pretrained(
-    model_name="meta-llama/Llama-2-7b-hf", # Changed model name to Llama-2-7b
-    max_seq_length=max_seq_length,
-    dtype=dtype,
-    load_in_4bit=load_in_4bit,
+model_name = "zai-org/GLM-4.6V-Flash"
+
+quantization_config = BitsAndBytesConfig(
+    load_in_4bit=True,
+    bnb_4bit_quant_type="nf4",
+    bnb_4bit_compute_dtype=dtype,
+)
+
+processor = AutoProcessor.from_pretrained(model_name, trust_remote_code=True)
+tokenizer = processor.tokenizer
+
+model = Glm4vForConditionalGeneration.from_pretrained(
+    model_name,
+    quantization_config=quantization_config,
     device_map="auto",
+    torch_dtype=dtype,
     trust_remote_code=True,
 )
-
-model=FastLanguageModel.get_peft_model(
-    model,
-    r=64,
-    target_modules=["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"],
-    lora_alpha=64,
-    lora_dropout=0.05
-    bia="none",
-    use_gradient_checkpointing="unsloth",
-    random_state=3407,
-    use_rslora=True,
-    loftq_config=None,
-)
-
-print("✓ Model & LoRA ready")
 
 print("✓ Model loaded successfully")
 
 # ============================================
-# Prepare Biomedical Datasets
+# Apply LoRA Adapters
 # ============================================
-pubmedqa = load_dataset("pubmed_qa", "pqa_labeled", split="train")
-medmcqa = load_dataset("openlifescienceai/medmcqa", split="train[:10000]")
-dataset = concatenate_datasets([pubmedqa, medmcqa])
+lora_config = LoraConfig(
+    r=64,
+    lora_alpha=64,
+    target_modules=["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"],
+    lora_dropout=0.05,
+    bias="none",
+    task_type="CAUSAL_LM"
+)
+
+model = get_peft_model(model, lora_config)
+
+print("✓ LoRA adapters configured")
+
+# ============================================
+# Prepare High-Quality Biomedical Dataset
+# ============================================
+dataset = load_dataset("TsinghuaC3I/UltraMedical", split="train")
 dataset = dataset.shuffle(seed=42)
 
 print(f"✓ Loaded {len(dataset)} training examples")
 
 # ============================================
-# Format Data for Biomedical SFT
+# Format Data for SFT
 # ============================================
-alpaca_prompt = """Below is an instruction that describes a biomedical task, paired with an input that provides further context. Write a response that appropriately completes the request.
-
-### Instruction:
-{}
-
-### Input:
-{}
-
-### Response:
-{}"""
-
 def formatting_prompts_func(examples):
-    instructions = []
-    inputs = []
-    outputs = []
-
-    for i in range(len(examples['question'])):
-        question = examples['question'][i] if 'question' in examples else examples['query'][i]
-        answer = examples['answer'][i] if 'answer' in examples else examples['cop'][i]
-
-        instructions.append("Answer this biomedical question accurately based on medical knowledge.")
-        inputs.append(question)
-        outputs.append(str(answer))
-
     texts = []
-    for instruction, input_text, output_text in zip(instructions, inputs, outputs):
-        text = alpaca_prompt.format(instruction, input_text, output_text) + tokenizer.eos_token
+    for conversation in examples["conversations"]:
+        text = tokenizer.apply_chat_template(conversation, tokenize=False) + tokenizer.eos_token
         texts.append(text)
-
     return {"text": texts}
 
 dataset = dataset.map(formatting_prompts_func, batched=True, remove_columns=dataset.column_names)
@@ -95,32 +80,13 @@ dataset = dataset.train_test_split(test_size=0.1, seed=42)
 print("✓ Dataset formatted for training")
 
 # ============================================
-# Apply QLoRA Adapters
-# ============================================
-model = FastLanguageModel.get_peft_model(
-    model,
-    r=64,
-    target_modules=["q_proj", "k_proj", "v_proj", "o_proj",
-                    "gate_proj", "up_proj", "down_proj",
-                    "w1", "w2", "w3"], # Reverted target modules
-    lora_alpha=64,
-    lora_dropout=0.05,
-    bias="all",
-    use_gradient_checkpointing="unsloth",
-    random_state=3407,
-    use_rslora=True,
-)
-
-print("✓ LoRA adapters configured")
-
-# ============================================
 # Configure and Run Training
 # ============================================
 training_args = TrainingArguments(
     per_device_train_batch_size=1,
     per_device_eval_batch_size=1,
     gradient_accumulation_steps=16,
-    num_train_epochs=5,
+    num_train_epochs=1,  # Reduced to 1 due to larger dataset size
     warmup_steps=200,
     learning_rate=5e-5,
     bf16=True,
@@ -131,11 +97,12 @@ training_args = TrainingArguments(
     weight_decay=0.01,
     lr_scheduler_type="cosine",
     seed=3407,
-    output_dir="llama2_biomed_outputs", # Changed output directory
+    output_dir="glm_biomed_outputs",
     load_best_model_at_end=True,
     metric_for_best_model="eval_loss",
     greater_is_better=False,
-    evaluation_strategy="steps", # Reverted eval_strategy
+    evaluation_strategy="steps",
+    gradient_checkpointing=True,
 )
 
 trainer = SFTTrainer(
@@ -147,11 +114,11 @@ trainer = SFTTrainer(
     max_seq_length=max_seq_length,
     dataset_num_proc=4,
     packing=False,
-    args=training_args, # Pass the TrainingArguments object
+    args=training_args,
 )
 
 print("✓ Training configured")
-print("Starting training... (this will take 6-10 hours)")
+print("Starting training... (this will take several days on a single A100; adjust epochs or subsample if needed)")
 
 trainer_stats = trainer.train()
 
@@ -160,39 +127,29 @@ print("✓ Training completed!")
 # ============================================
 # Save LoRA Weights
 # ============================================
-model.save_pretrained("llama2_biomed_lora") # Changed save directory
-tokenizer.save_pretrained("llama2_biomed_lora") # Changed save directory
-print("✓ LoRA weights saved to: llama2_biomed_lora/")
+model.save_pretrained("glm_biomed_lora")
+tokenizer.save_pretrained("glm_biomed_lora")
+print("✓ LoRA weights saved to: glm_biomed_lora/")
 
 # ============================================
 # Save Merged Full Model
 # ============================================
-model.save_pretrained_merged(
-    "llama2_biomed_merged", # Changed save directory
-    tokenizer,
-    save_method="merged_16bit"
-)
-print("✓ Merged model saved to: llama2_biomed_merged/")
+model = model.merge_and_unload()
+model.save_pretrained("glm_biomed_merged")
+tokenizer.save_pretrained("glm_biomed_merged")
+print("✓ Merged model saved to: glm_biomed_merged/")
 
 # ============================================
 # Test Inference
 # ============================================
-FastLanguageModel.for_inference(model)
+test_prompt = [
+    {"role": "user", "content": "Answer this biomedical question accurately based on medical knowledge: What are the primary considerations when selecting biomaterials for cardiovascular implants?"}
+]
 
-test_prompt = """Below is an instruction that describes a biomedical task, paired with an input that provides further context. Write a response that appropriately completes the request.
+inputs = tokenizer.apply_chat_template(test_prompt, return_tensors="pt").to("cuda")
 
-### Instruction:
-Answer this biomedical question accurately based on medical knowledge.
-
-### Input:
-What are the primary considerations when selecting biomaterials for cardiovascular implants?
-
-### Response:
-"""
-
-inputs = tokenizer([test_prompt], return_tensors="pt").to("cuda")
 outputs = model.generate(
-    **inputs,
+    inputs,
     max_new_tokens=256,
     temperature=0.3,
     do_sample=True,
