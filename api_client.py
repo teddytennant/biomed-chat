@@ -2,9 +2,6 @@
 
 import json
 
-import google.generativeai as genai
-from openai import OpenAI
-
 import config
 import tools  # Import your tools module
 from mock_responses import MockResponseGenerator, MockToolExecutor
@@ -50,6 +47,7 @@ if USE_MOCK_MODE:
 else:
     if API_PROVIDER == "grok":
         try:
+            from openai import OpenAI
             grok_client = OpenAI(api_key=config.GROK_API_KEY, base_url="https://api.x.ai/v1")
         except Exception as e:
             print(f"Warning: Failed to initialize Grok client: {e}. Falling back to mock mode.")
@@ -58,6 +56,7 @@ else:
             mock_tools = MockToolExecutor()
     elif API_PROVIDER == "gemini":
         try:
+            import google.generativeai as genai
             genai.configure(api_key=config.GEMINI_API_KEY)
             gemini_model = genai.GenerativeModel("gemini-pro")
         except Exception as e:
@@ -67,6 +66,7 @@ else:
             mock_tools = MockToolExecutor()
     elif API_PROVIDER == "openai":
         try:
+            from openai import OpenAI
             openai_client = OpenAI(api_key=config.OPENAI_API_KEY)
         except Exception as e:
             print(f"Warning: Failed to initialize OpenAI client: {e}. Falling back to mock mode.")

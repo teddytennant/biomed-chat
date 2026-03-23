@@ -312,7 +312,7 @@ async function sendMessage() {
     }
   } catch (err) {
     if (err.name !== 'AbortError') {
-      assistantBubble.innerHTML = `<div class="md"><p>Error: ${err.message}</p></div>`;
+      assistantBubble.innerHTML = `<div class="md"><p>Error: ${escapeHtml(err.message)}</p></div>`;
     } else {
       assistantBubble.innerHTML = renderMarkdown(assistantAccum + '...');
     }
