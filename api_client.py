@@ -50,7 +50,7 @@ else:
     if API_PROVIDER == "grok":
         try:
             grok_client = OpenAI(api_key=config.GROK_API_KEY, base_url="https://api.x.ai/v1")
-        except (anthropic.APIError, anthropic.APIConnectionError) as e:
+        except Exception as e:
             print(f"Warning: Failed to initialize Grok client: {e}. Falling back to mock mode.")
             USE_MOCK_MODE = True
             mock_generator = MockResponseGenerator()
@@ -59,7 +59,7 @@ else:
         try:
             genai.configure(api_key=config.GEMINI_API_KEY)
             gemini_model = genai.GenerativeModel("gemini-pro")
-        except (anthropic.APIError, anthropic.APIConnectionError) as e:
+        except Exception as e:
             print(f"Warning: Failed to initialize Gemini client: {e}. Falling back to mock mode.")
             USE_MOCK_MODE = True
             mock_generator = MockResponseGenerator()
@@ -67,7 +67,7 @@ else:
     elif API_PROVIDER == "openai":
         try:
             openai_client = OpenAI(api_key=config.OPENAI_API_KEY)
-        except (anthropic.APIError, anthropic.APIConnectionError) as e:
+        except Exception as e:
             print(f"Warning: Failed to initialize OpenAI client: {e}. Falling back to mock mode.")
             USE_MOCK_MODE = True
             mock_generator = MockResponseGenerator()
@@ -75,7 +75,7 @@ else:
     elif API_PROVIDER == "anthropic":
         try:
             anthropic_client = anthropic.Anthropic(api_key=config.ANTHROPIC_API_KEY)
-        except (anthropic.APIError, anthropic.APIConnectionError) as e:
+        except Exception as e:
             print(f"Warning: Failed to initialize Anthropic client: {e}. "
                   f"Falling back to mock mode.")
             USE_MOCK_MODE = True
@@ -134,7 +134,7 @@ def process_grok_query(user_query, rag_context, model_name="grok-4"):
 
         return response.choices[0].message.content
 
-    except (anthropic.APIError, anthropic.APIConnectionError) as e:
+    except Exception as e:
         print(f"Grok API call failed: {e}. Using mock response.")
         return f"⚠️ **API Error - Using Demo Mode**\n\n{mock_generator.get_response(user_query)}"
 
@@ -151,7 +151,7 @@ def process_gemini_query(user_query, rag_context):
     try:
         response = gemini_model.generate_content(full_prompt)
         return response.text
-    except (anthropic.APIError, anthropic.APIConnectionError) as e:
+    except Exception as e:
         print(f"Gemini API call failed: {e}. Using mock response.")
         return f"⚠️ **API Error - Using Demo Mode**\n\n{mock_generator.get_response(user_query)}"
 
@@ -207,7 +207,7 @@ def process_openai_query(user_query, rag_context):
 
         return response.choices[0].message.content
 
-    except (anthropic.APIError, anthropic.APIConnectionError) as e:
+    except Exception as e:
         print(f"OpenAI API call failed: {e}. Using mock response.")
         return f"⚠️ **API Error - Using Demo Mode**\n\n{mock_generator.get_response(user_query)}"
 
