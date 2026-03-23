@@ -2,6 +2,7 @@
 Features modern design, animations, and improved user experience
 """
 
+import html
 import os
 import time
 
@@ -337,7 +338,10 @@ if "conversation_history" not in st.session_state:
 if "rag_initialized" not in st.session_state:
     try:
         if os.path.exists(config.RAG_INDEX_PATH):
-            load_rag_index(config.RAG_INDEX_PATH)
+            load_rag_index(
+                index_path=config.RAG_INDEX_PATH,
+                documents_path=config.RAG_DOCUMENTS_PATH,
+            )
             st.session_state.rag_initialized = True
     except FileNotFoundError:
         st.session_state.rag_initialized = False
@@ -425,12 +429,13 @@ with col1:
 
     # Display chat messages with enhanced styling
     for idx, message in enumerate(st.session_state.messages):
+        safe_content = html.escape(message["content"])
         if message["role"] == "user":
             st.markdown(
                 f"""<div class="chat-container">
                     <div class="user-message">
                         <strong>You:</strong><br>
-                        {message["content"]}
+                        {safe_content}
                     </div>
                 </div>""",
                 unsafe_allow_html=True,
@@ -440,7 +445,7 @@ with col1:
                 f"""<div class="chat-container">
                     <div class="assistant-message">
                         <strong>🤖 Assistant:</strong><br>
-                        {message["content"]}
+                        {safe_content}
                     </div>
                 </div>""",
                 unsafe_allow_html=True,
@@ -449,9 +454,10 @@ with col1:
             # Show RAG context if available
             if "rag_context" in message and message["rag_context"]:
                 with st.expander("📚 Retrieved Context", expanded=False):
+                    safe_rag = html.escape(message["rag_context"])
                     st.markdown(
                         f"""<div class="rag-context">
-                            {message["rag_context"]}
+                            {safe_rag}
                         </div>""",
                         unsafe_allow_html=True,
                     )
@@ -617,7 +623,7 @@ if (send_button or user_input) and user_input:
             # Show success notification
             st.balloons()
 
-        except (IOError, OSError) as e:
+        except Exception as e:
             st.error(f"❌ Error: {str(e)}")
             if USE_MOCK_MODE:
                 st.info("💡 Running in demo mode. Some features may be limited.")
