@@ -6,7 +6,17 @@ from unittest.mock import Mock, patch
 import local_model
 
 
+def _reset_status():
+    local_model._set_status("not_downloaded", error=None, detail="Model not downloaded", device=None)
+
+
 class TestLocalModelStatus(unittest.TestCase):
+
+    def setUp(self):
+        _reset_status()
+
+    def tearDown(self):
+        _reset_status()
     """Test status tracking functionality."""
 
     def test_initial_status(self):

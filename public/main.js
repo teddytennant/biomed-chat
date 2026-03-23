@@ -41,6 +41,12 @@ function sanitizeUserInput(text) {
   return text.replace(/\s+$/g, '').trim();
 }
 
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
 function clearLocalModelPoll() {
   if (localModelPollHandle) {
     clearTimeout(localModelPollHandle);
