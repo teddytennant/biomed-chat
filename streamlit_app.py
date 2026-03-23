@@ -19,8 +19,8 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded",
     menu_items={
-        "Get Help": "https://github.com/yourusername/biomed-chat",
-        "Report a bug": "https://github.com/yourusername/biomed-chat/issues",
+        "Get Help": "https://github.com/teddytennant/biomed-chat",
+        "Report a bug": "https://github.com/teddytennant/biomed-chat/issues",
         "About": (
             "# BioMed AI Assistant\nPowered by Grok-4 with RAG Technology"
         ),
