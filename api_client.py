@@ -2,7 +2,6 @@
 
 import json
 
-import anthropic
 import google.generativeai as genai
 from openai import OpenAI
 
@@ -15,6 +14,8 @@ try:
     import local_model
 except ImportError:  # pragma: no cover - Optional dependency path
     local_model = None
+
+anthropic = None  # Imported conditionally when API_PROVIDER == "anthropic"
 
 # Determine API provider and initialize client
 API_PROVIDER = config.API_PROVIDER.lower()
@@ -74,6 +75,7 @@ else:
             mock_tools = MockToolExecutor()
     elif API_PROVIDER == "anthropic":
         try:
+            import anthropic
             anthropic_client = anthropic.Anthropic(api_key=config.ANTHROPIC_API_KEY)
         except Exception as e:
             print(f"Warning: Failed to initialize Anthropic client: {e}. "
