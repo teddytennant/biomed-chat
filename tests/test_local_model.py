@@ -9,6 +9,14 @@ import pytest
 import local_model
 
 
+@pytest.fixture(autouse=True)
+def reset_local_model_status():
+    """Reset global model state before each test to avoid pollution."""
+    local_model._set_status("not_downloaded", error=None, detail="Model not downloaded", device=None)
+    yield
+    local_model._set_status("not_downloaded", error=None, detail="Model not downloaded", device=None)
+
+
 class TestLocalModelStatus:
     """Test status tracking functionality."""
 
@@ -173,5 +181,4 @@ class TestSentinelFile:
         local_model._mark_ready()
 
         mock_parent.mkdir.assert_called_once_with(parents=True, exist_ok=True)
-        mock_sentinel_path.write_text.assert_called_once_with("ready")</content>
-<parameter name="filePath">/home/teddy/Desktop/biomed-chat/tests/test_local_model.py
+        mock_sentinel_path.write_text.assert_called_once_with("ready")

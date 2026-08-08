@@ -41,6 +41,12 @@ function sanitizeUserInput(text) {
   return text.replace(/\s+$/g, '').trim();
 }
 
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
 function clearLocalModelPoll() {
   if (localModelPollHandle) {
     clearTimeout(localModelPollHandle);
@@ -306,7 +312,7 @@ async function sendMessage() {
     }
   } catch (err) {
     if (err.name !== 'AbortError') {
-      assistantBubble.innerHTML = `<div class="md"><p>Error: ${err.message}</p></div>`;
+      assistantBubble.innerHTML = `<div class="md"><p>Error: ${escapeHtml(err.message)}</p></div>`;
     } else {
       assistantBubble.innerHTML = renderMarkdown(assistantAccum + '...');
     }
